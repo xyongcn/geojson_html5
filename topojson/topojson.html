@@ -1,0 +1,59 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Map of europe</title>
+    <style>
+      .outline {
+        fill: #ddd;
+        stroke: #000;
+        stroke-width: 1px;
+      }
+      svg {
+        border-style: solid;
+        border-width: 1px;
+        border-color: #ccc;
+       }
+    </style>
+
+  </head>
+  <body>
+    <script src="d3/d3.min.js" charset="utf-8"></script>
+    <script src="d3/topojson.js"></script>
+
+    <script>
+      var width = 900,
+          height = 600;
+
+      var projection = d3.geo.mercator();
+
+      var path = d3.geo.path()
+                  .projection(projection);
+
+      var svg = d3.select("body").append("svg")
+        .attr("width", width)
+        .attr("height", height);
+
+      d3.json("lx.topojson", function(error, osm) {
+        var countries = topojson.feature(osm, osm.objects.collection) //根据JSON对象进行修改
+        projection.scale(1).translate([0, 0]);
+
+        var b = path.bounds(countries),
+            s = .95 / Math.max((b[1][0] - b[0][0]) / width, (b[1][1] - b[0][1]) / height),
+            t = [(width - s * (b[1][0] + b[0][0])) / 2, (height - s * (b[1][1] + b[0][1])) / 2];
+
+        projection
+          .scale(s)
+          .translate(t);
+
+        svg.append("path")
+          .datum(countries)
+          .attr("class", "outline")
+          .attr("d", path);
+      });
+
+
+    </script>
+
+  </body>
+</html>
