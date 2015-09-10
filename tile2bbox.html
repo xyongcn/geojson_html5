@@ -1,0 +1,29 @@
+<html>
+<body>
+
+<script type="text/javascript">
+		var zoom = 14;
+		var x = 13478;
+		var y = 6218;
+		function tile2lon(zoom, x) {
+		  return (x / Math.pow(2, zoom) * 360 - 180);
+		}
+
+		function tile2lat(zoom, y) {
+		  var n = Math.PI - (2 * Math.PI * y) / Math.pow(2, zoom);
+		  return (180 / Math.PI * Math.atan(0.5 * (Math.exp(n) - Math.exp(-n))));
+		}
+		var bbox = new Array;
+		bbox[0]= tile2lon(zoom, x);
+		bbox[3]= tile2lat(zoom, y);
+		bbox[2]= tile2lon(zoom, x+1);
+		bbox[1]= tile2lat(zoom, y+1);	
+
+for (i=0;i<bbox.length;i++)
+{
+document.write(bbox[i] + "<br />")
+}
+</script>
+
+</body>
+</html>
