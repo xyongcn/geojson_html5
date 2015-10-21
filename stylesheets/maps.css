@@ -103,7 +103,7 @@ body {
             margin: 0;
             padding: 0 10px;
 
-            color: #555;
+            color: #eee;
 
             border-right: 1px solid #aaa;
          }
@@ -152,6 +152,7 @@ body {
    top: 91px;
    right: 0;
    bottom: 0;
+   background: #F1EEE8;
    
    cursor: move;
 }

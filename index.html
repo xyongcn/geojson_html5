@@ -1,0 +1,887 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8" />
+	<title>Maps &ndash; Wanli Yang</title>
+	<link rel="stylesheet" href="stylesheets/maps.css" />
+</head>
+<body>
+	<h1>BIT in Liangxiang</h1>
+	<div id="site-navigation-wrapper">
+		<div id="site-navigation">
+			<nav>
+				<ul>
+					<li style="font-weight: bold;">Map</li>
+				</ul>
+			</nav>
+
+			<menu>
+				<ul>
+					<li style="font-weight: bold;">Ways</li>
+				</ul>
+			</menu>
+		</div>
+	</div>
+
+	<div id="map-wrapper"></div>
+
+	<script src="javascript/jquery.js"></script>
+	<!-- <script src="d3/d3.min.js"></script>-->
+	<script src="stylesheets/highway.js"></script>
+	<script src="stylesheets/water.js"></script>
+	<script src="stylesheets/building.js"></script>
+	<script src="stylesheets/railway.js"></script>
+	<script>
+	var $ = jQuery;
+
+	var Map = function(div,zoom,x,y) {
+		this.$div = $(div);
+
+		this.scale = 256;
+
+		this.data = null;
+		this.streets = new Array();
+
+		// Add canvas
+		this.$canvas = $("<canvas id='map-canvas'></canvas>");
+		this.$canvas[0].width = this.$div.width();
+		this.$canvas[0].height = this.$div.height();
+
+		this.$div.append(this.$canvas);
+
+		// Register events
+		var _this = this;
+		$(window).on('resize', function() {
+			clearTimeout(_this.resizeTimeout);
+			_this.resizeTimeout = setTimeout(function() {
+				//_this.draw();
+				_this.draw_Image(zoom,x,y);
+			}, 500);
+		});
+	
+		this.$canvas.on('mousewheel', function(event) {
+			//_this.scale = Math.max(100, _this.scale - event.originalEvent.deltaY / 2);
+			if(event.originalEvent.deltaY>0)
+				_this.draw_Image(zoom+1,2*x,2*y);
+			if(event.originalEvent.deltaY<0)
+				_this.draw_Image(zoom,x,y);
+		});
+	
+
+		this.$canvas.on('mousedown', function(event) {
+			_this.last_position = {
+				x: event.clientX,
+				y: event.clientY
+			};
+
+			$(this).bind('mousemove', function(event) {
+				var addX = 0;
+				var addY = 0;
+				var delta = {
+					x: _this.last_position.x - event.clientX,
+					y: _this.last_position.y - event.clientY
+				};
+
+				//bbox[1] -= delta.y / (60 * _this.scale);
+				//bbox[3] -= delta.y / (60 * _this.scale);					 
+				//bbox[0] += delta.x / (45 * _this.scale);
+				//bbox[2] += delta.x / (45 * _this.scale); 
+
+				 if(area[2] < 10) { //递归
+				 	flag=1;
+				 	area[0]=0;
+				 	//area[1]=0;	
+				 	area[2]= 246;
+				 	//area[3]= 256;
+				 }
+				 if(area[3] < 10) { //递归
+				 	flag=1;
+				 	//area[0]=0;
+				 	area[1]=0;	
+				 	//area[2]= 256;
+				 	area[3]= 246;
+				 }
+				 area[1] -= delta.y;
+				 area[3] -= delta.y;					 
+				 area[0] -= delta.x;
+				 area[2] -= delta.x; 
+
+				 eventX -=delta.x;
+				 eventY -=delta.y;
+
+				 _this.last_position = {
+				 	x: event.clientX,
+				 	y: event.clientY
+				 };	
+				 
+				 //_this.draw_Image(14,13478,6219);
+				 //向右水平移动一个以上切片（或者向左水平移动一个切片）
+				 if((eventX>=256 && eventY<256 && eventY>-256)|| (eventX<=-256 && eventY<256 && eventY>-256)) {
+
+				 	addX = parseInt(eventX/256);
+				 	x=x-addX;
+				 	_this.draw_Image(zoom,x,y);
+				 	changeCenter=1;
+				 	
+				 }
+				 
+				 if((eventY>=256 && eventX<256 && eventX>-256)|| (eventY<=-256 && eventX<256 && eventX>-256)) {
+
+				 	addY = parseInt(eventY/256);
+				 	y=y-addY;
+				 	_this.draw_Image(zoom,x,y);
+				 	changeCenter=1;
+				 }
+
+				 if((eventY>=256 && eventX>=256)|| (eventY<=-256 && eventX<=-256)) {
+
+				 	addY = parseInt(eventY/256);
+				 	addX = parseInt(eventX/256);
+				 	x=x-addX;
+				 	y=y-addY;
+				 	_this.draw_Image(zoom,x,y);
+				 }
+/*				 if((eventY>=256 && eventX<=-256)|| (eventY<=-256 && eventX>=256)) {
+
+				 	addY = parseInt(eventY/256);
+				 	_this.draw_Image(zoom,x-addX,y-addY);
+				 }
+*/
+				// if(eventX<256 && eventX>-256 && eventY<256 && eventY>-256)
+				 _this.draw_Image(zoom,x,y);
+				 
+
+
+				});
+		});
+
+		this.$canvas.on('mouseup', function(event) {
+			$(this).unbind('mousemove');
+		})
+
+
+		return this;
+		}; // Map div function -地图操
+
+		Map.prototype.load = function(jsonTile) {
+			var _this = this;
+			$.ajaxSettings.async = false;
+			$.getJSON(jsonTile, function(data) {
+				_this.data = data;
+				//_this.draw_json(ct,jsonTile,zoom,x,y,moveX,moveY);
+
+
+				$(_this).trigger('data_updated');
+			});
+		};
+
+		Map.prototype.draw_json = function(ct,jsonTile,zoom,x,y,moveX,moveY) {
+			var ctx = ct;
+
+			//坐标缩放权值
+			var xmult = this.scale / (bbox[2] - bbox[0]);
+			var ymult = this.scale / (bbox[3] - bbox[1]);
+
+			var m = new Array;
+			var n = new Array;
+			var way_name = new Array;
+			var num = 0;
+			var coordinates = new Array;
+
+			function tile2lon(zoom, x) {
+			return (x / Math.pow(2, zoom) * 360 - 180);
+			}
+
+			function tile2lat(zoom, y) {
+				var n = Math.PI - (2 * Math.PI * y) / Math.pow(2, zoom);
+				return (180 / Math.PI * Math.atan(0.5 * (Math.exp(n) - Math.exp(-n))));
+			}
+
+			//var bbox = new Array;
+			bbox[0]= tile2lon(zoom, x);
+			bbox[3]= tile2lat(zoom, y);
+			bbox[2]= tile2lon(zoom, x+1);
+			bbox[1]= tile2lat(zoom, y+1);
+/*
+			
+
+			function tile2lon(zoom, x) {
+				return (x / Math.pow(2, zoom) * 360 - 180);
+			}
+
+			function tile2lat(zoom, y) {
+				var n = Math.PI - (2 * Math.PI * y) / Math.pow(2, zoom);
+				return (180 / Math.PI * Math.atan(0.5 * (Math.exp(n) - Math.exp(-n))));
+			}
+			
+			bbox[0]= tile2lon(zoom, x);
+			bbox[3]= tile2lat(zoom, y);
+			bbox[2]= tile2lon(zoom, x+1);
+			bbox[1]= tile2lat(zoom, y+1);
+*/
+			
+
+			 $.each(this.data.features, function(indx, obj) { 
+
+			 	if (obj.geometry.type === 'LineString' ){
+			 		coordinates=obj.geometry.coordinates;
+			 	}
+			 	if (obj.geometry.type === 'MultiLineString' || obj.geometry.type === 'Polygon' ){
+			 		coordinates=obj.geometry.coordinates[0];
+			 	}
+			 	if (obj.geometry.type === 'MultiPolygon' ){
+			 		coordinates=obj.geometry.coordinates[0][0];
+			 	}
+
+			 	ctx.beginPath();
+
+			 	var hasInRange = false;
+			 	$.each(coordinates, function(nindx, node) {
+			 		if ((node[0] >= Math.min(bbox[0], bbox[2]) && node[0] <= Math.max(bbox[0], bbox[2]))&&(node[1] >= Math.min(bbox[1], bbox[3]) && node[1] <= Math.max(bbox[1], bbox[3]))) { hasInRange = true };
+						//if (x>=0 && x<=area[2] && y>=0 && y<=area[3]) hasInRange = true;
+					if(hasInRange) {
+						var x_ = (node[0] - bbox[0]) * xmult + moveX;
+				 		var y_ = (bbox[3] - node[1]) * ymult + moveY;
+
+				 		if (nindx === 0) {
+				 			ctx.moveTo(x_, y_);
+				 			//if(obj.properties.name != undefined) {  //全部对象的名字
+				 			if(obj.properties.name != undefined && obj.properties.highway != undefined && obj.properties.highway != null){
+				 					m[num]=x_;
+				 					n[num]=y_;
+				 					way_name[num]=obj.properties.name;
+				 					num += 1;
+				 				}
+
+								//ctx.fillText=(obj.properties.name,m,n);
+							}
+						else {ctx.lineTo(x_, y_);}
+					}
+			 		
+					//ctx.fillText(way_name[num],m[num],n[num]); 
+
+				});
+
+			 	if (!hasInRange) { return; };
+
+			 	if(obj.properties.highway != undefined && obj.properties.highway != null) {
+
+			 		var roads = new highwayCss('highway',obj.properties.highway,14);
+
+			 		ctx.lineJoin="round";
+					ctx.strokeStyle = roads[0];
+					ctx.lineWidth = roads[2];
+					//ctx.strokeDasharray = 5,10;
+					ctx.stroke();
+
+					ctx.lineJoin="round";
+					ctx.strokeStyle = roads[1];
+					ctx.lineWidth = roads[3];
+					ctx.stroke();
+			 		
+			};//if type==way end
+
+            //building water area
+            
+            if(obj.properties["building"] != null) {
+            	var building = new buildingCss('building',obj.properties.building,14);
+            	ctx.strokeStyle = building[0];
+            	ctx.fillStyle = building[1];
+            	ctx.lineWidth = building[2];
+            	ctx.fill();
+            	ctx.stroke();
+            }
+
+            if(obj.properties.water != null) {
+            	var water = new waterCss('water',obj.properties,14);
+            	ctx.fillStyle = water[1];
+            	ctx.globalAlpha = 0.9; 
+            	ctx.fill();
+            	//ctx.stroke();
+            }
+
+            if(obj.properties.waterway === 'river'){
+            	var waterway = new waterCss('waterway',obj.properties,14);
+            	ctx.strokeStyle = waterway[0];
+            	ctx.lineWidth = waterway[2];
+            	ctx.stroke();
+            }
+
+            if(obj.properties.railway === 'subway'){
+            	var railway = new railwayCss('subway',obj.properties,14);
+            	if(railway[6]==0) //非虚线
+            	{
+	            	ctx.strokeStyle = railway[0];
+	            	ctx.lineWidth = railway[1];
+	            	ctx.stroke();
+
+	            	ctx.strokeStyle = railway[2];
+	            	ctx.lineWidth = railway[3];
+	            	ctx.stroke();
+	            	
+	            	ctx.strokeStyle = railway[4];
+	            	ctx.lineWidth = railway[5];
+	            	ctx.stroke();
+            	}
+            	if(railway[6]==1) //画虚线
+            	{
+	            	ctx.strokeStyle = railway[0];
+	            	ctx.lineWidth = railway[1];
+	            	ctx.stroke();
+	            }
+            	
+            }
+
+            ctx.fillStyle = 'black';
+					//ctx.fillText(num,m[num-1],n[num-1]);
+			}); // .each(this.data.features, function(indx, way)
+
+			
+			for (var i = 0; i < way_name.length; i++) {
+				ctx.strokeStyle = 'black';
+				ctx.fillstyle = 'black';
+				ctx.font="10px Arial";
+				ctx.textBaseline="middle";
+				ctx.textAlign = "center";
+				ctx.fillText(way_name[i],m[i],n[i]);
+				//相同路名只显示一次
+				for (var j = i; j <way_name.length; j++) {
+					if(way_name[j]===way_name[j+1]) j++;
+					else{
+						i=j; 
+						break;
+					}
+				};
+			}; 
+		}
+
+
+		// render MAP
+		Map.prototype.draw_Image = function(zoom,x,y){
+
+			var _this = this;
+			var ctx = this.$canvas[0].getContext('2d');
+
+			this.$canvas[0].width = this.$div.width();
+			this.$canvas[0].height = this.$div.height();
+			ctx.width = this.$div.width();
+			ctx.height = this.$div.height();
+
+			var pngTile = new Array();
+			var jsonTile = new Array();
+
+		/*
+			for(var i = 0; i < 35 ; i++){
+				pngTile[i] = new Image();
+				pngTile[i].addEventListener('load',eventImageLoad,false);
+			}
+		*/
+			var move_x = new Array();
+			var move_y = new Array();
+
+
+			for (var i = 0; i < 5; i++) {
+				move_y[i] = 256*(i-1);
+			};	
+
+			for (var i = 0; i < 7; i++) {
+				move_x[i] = 256*(i-1);
+				for (var j = 0; j < 5 ; j++) {
+					pngTile[5*i+j] = 'Tiles'+'/'+zoom+'/'+(x-3+i)+'/'+(y-2+j)+'.'+'png';
+					jsonTile[5*i+j] = 'Tiles'+'/'+zoom+'/'+(x-3+i)+'/'+(y-2+j)+'.'+'json';
+
+				};
+			};
+/*
+			function eventImageLoad(){
+				drawScreen();
+			}
+*/
+			function drawScreen(){
+				     
+				     //切片位置视图
+			//	 0   1  2   3   4   5    6
+			//0	[0   5  10  15  20  25   30]
+			//1	[1  [6  11  16  21  26]  31]
+			//2	[2  [7  12  17  22  27]  32]
+			//3	[3  [8  13  18  23  28]  33]
+			//4	[4   9  14  19  24  29   34]
+
+				if(changeCenter==1) {
+					move_x[3]=move_x[3]+eventX;
+					move_y[2]=move_y[2]+eventY;
+					eventX=0;
+					eventY=0;
+					changeCenter=0;
+				}
+				var img = new Array();
+//img17
+				var img17 = new Image();
+				img17.onload = function(){
+					ctx.drawImage(img17,move_x[3]+eventX,move_y[2]+eventY);
+				};
+				img17.onerror = function(){
+					map.load(jsonTile[17])
+					map.draw_json(ctx,jsonTile[17],zoom,x,y,move_x[3]+eventX,move_y[2]+eventY);
+				}
+				//img.src="Tiles/14/13478/6219.png";
+				img17.src=pngTile[17];
+				//
+//img16
+				var img16 = new Image();
+				img16.onload = function(){
+					ctx.drawImage(img16,move_x[3]+eventX,move_y[1]+eventY);
+				};
+				img16.onerror = function(){
+					map.load(jsonTile[16])
+					map.draw_json(ctx,jsonTile[16],zoom,x,y-1,move_x[3]+eventX,move_y[1]+eventY);
+				}
+				//img.src="Tiles/14/13478/6219.png";
+				img16.src=pngTile[16];
+//img18
+				var img18 = new Image();
+				img18.onload = function(){
+					ctx.drawImage(img[18],move_x[3]+eventX,move_y[3]+eventY);
+				};
+				img18.onerror = function(){
+					map.load(jsonTile[18])
+					map.draw_json(ctx,jsonTile[18],zoom,x,y+1,move_x[3]+eventX,move_y[3]+eventY);
+				}
+				img18.src=pngTile[18];
+//img11
+				var img11= new Image();
+				img11.onload = function(){
+					ctx.drawImage(img11,move_x[2]+eventX,move_y[1]+eventY);
+				};
+				img11.onerror = function(){
+					map.load(jsonTile[11])
+					map.draw_json(ctx,jsonTile[11],zoom,x-1,y-1,move_x[2]+eventX,move_y[1]+eventY);
+				}
+				img11.src=pngTile[11];
+//img12
+				var img12= new Image();
+				img12.onload = function(){
+					ctx.drawImage(img12,move_x[2]+eventX,move_y[2]+eventY);
+				};
+				img12.onerror = function(){
+					map.load(jsonTile[12])
+					map.draw_json(ctx,jsonTile[12],zoom,x-1,y,move_x[2]+eventX,move_y[2]+eventY);
+				}
+				img12.src=pngTile[12];
+//img13
+				var img13= new Image();
+				img13.onload = function(){
+					ctx.drawImage(img13,move_x[2]+eventX,move_y[3]+eventY);
+				};
+				img13.onerror = function(){
+					map.load(jsonTile[13])
+					map.draw_json(ctx,jsonTile[13],zoom,x-1,y+1,move_x[2]+eventX,move_y[3]+eventY);
+				}
+				img13.src=pngTile[13];
+//img21
+				var img21= new Image();
+				img21.onload = function(){
+					ctx.drawImage(img21,move_x[4]+eventX,move_y[1]+eventY);
+				};
+				img21.onerror = function(){
+					map.load(jsonTile[21])
+					map.draw_json(ctx,jsonTile[21],zoom,x+1,y-1,move_x[4]+eventX,move_y[1]+eventY);
+				}
+				img21.src=pngTile[21];
+//img22
+				var img22= new Image();
+				img22.onload = function(){
+					ctx.drawImage(img22,move_x[4]+eventX,move_y[2]+eventY);
+				};
+				img22.onerror = function(){
+					map.load(jsonTile[22])
+					map.draw_json(ctx,jsonTile[22],zoom,x+1,y,move_x[4]+eventX,move_y[2]+eventY);
+				}
+				img22.src=pngTile[22];
+//img23
+				var img23= new Image();
+				img23.onload = function(){
+					ctx.drawImage(img23,move_x[4]+eventX,move_y[3]+eventY);
+				};
+				img23.onerror = function(){
+					map.load(jsonTile[23])
+					map.draw_json(ctx,jsonTile[23],zoom,x+1,y+1,move_x[4]+eventX,move_y[3]+eventY);
+				}
+				img23.src=pngTile[23];
+//img5
+				var img5= new Image();
+				img5.onload = function(){
+					ctx.drawImage(img5,move_x[1]+eventX,move_y[1]+eventY);
+				};
+				img5.onerror = function(){
+					map.load(jsonTile[5])
+					map.draw_json(ctx,jsonTile[5],zoom,x-2,y-1,move_x[1]+eventX,move_y[1]+eventY);
+				}
+				img5.src=pngTile[5];
+//img6
+				var img6= new Image();
+				img6.onload = function(){
+					ctx.drawImage(img6,move_x[1]+eventX,move_y[2]+eventY);
+				};
+				img6.onerror = function(){
+					map.load(jsonTile[6])
+					map.draw_json(ctx,jsonTile[6],zoom,x-2,y,move_x[1]+eventX,move_y[2]+eventY);
+				}
+				img6.src=pngTile[6];
+//img7
+				var img7= new Image();
+				img7.onload = function(){
+					ctx.drawImage(img7,move_x[1]+eventX,move_y[3]+eventY);
+				};
+				img7.onerror = function(){
+					map.load(jsonTile[7])
+					map.draw_json(ctx,jsonTile[7],zoom,x-2,y+1,move_x[1]+eventX,move_y[3]+eventY);
+				}
+				img7.src=pngTile[7];			
+//img26
+				var img26= new Image();
+				img26.onload = function(){
+					ctx.drawImage(img26,move_x[5]+eventX,move_y[1]+eventY);
+				};
+				img26.onerror = function(){
+					map.load(jsonTile[26])
+					map.draw_json(ctx,jsonTile[26],zoom,x+2,y,move_x[5]+eventX,move_y[1]+eventY);
+				}
+				img26.src=pngTile[26];
+//img27
+				var img27= new Image();
+				img27.onload = function(){
+					ctx.drawImage(img27,move_x[5]+eventX,move_y[2]+eventY);
+				};
+				img27.onerror = function(){
+					map.load(jsonTile[27])
+					map.draw_json(ctx,jsonTile[27],zoom,x+2,y+1,move_x[5]+eventX,move_y[2]+eventY);
+				}
+				img27.src=pngTile[27];
+//img28
+				var img28= new Image();
+				img28.onload = function(){
+					ctx.drawImage(img28,move_x[5]+eventX,move_y[3]+eventY);
+				};
+				img28.onerror = function(){
+					map.load(jsonTile[28])
+					map.draw_json(ctx,jsonTile[28],zoom,x+2,y,move_x[5]+eventX,move_y[3]+eventY);
+				}
+				img28.src=pngTile[28];
+
+//img0
+				var img0= new Image();
+				img0.onload = function(){
+					ctx.drawImage(img0,move_x[0]+eventX,move_y[0]+eventY);
+				};
+				img0.onerror = function(){
+					map.load(jsonTile[0])
+					map.draw_json(ctx,jsonTile[0],zoom,x-3,y-2,move_x[0]+eventX,move_y[0]+eventY);
+				}
+				img0.src=pngTile[0];
+//img1
+				var img1= new Image();
+				img1.onload = function(){
+					ctx.drawImage(img1,move_x[0]+eventX,move_y[1]+eventY);
+				};
+				img1.onerror = function(){
+					map.load(jsonTile[1])
+					map.draw_json(ctx,jsonTile[1],zoom,x-3,y-1,move_x[0]+eventX,move_y[1]+eventY);
+				}
+				img1.src=pngTile[1];
+//img2
+				var img2= new Image();
+				img2.onload = function(){
+					ctx.drawImage(img2,move_x[0]+eventX,move_y[2]+eventY);
+				};
+				img2.onerror = function(){
+					map.load(jsonTile[2])
+					map.draw_json(ctx,jsonTile[2],zoom,x-3,y,move_x[0]+eventX,move_y[2]+eventY);
+				}
+				img2.src=pngTile[2];
+//img3
+				var img3= new Image();
+				img3.onload = function(){
+					ctx.drawImage(img3,move_x[0]+eventX,move_y[3]+eventY);
+				};
+				img3.onerror = function(){
+					map.load(jsonTile[3])
+					map.draw_json(ctx,jsonTile[3],zoom,x-3,y+1,move_x[0]+eventX,move_y[3]+eventY);
+				}
+				img3.src=pngTile[3];
+//img4
+				var img4= new Image();
+				img4.onload = function(){
+					ctx.drawImage(img4,move_x[0]+eventX,move_y[4]+eventY);
+				};
+				img4.onerror = function(){
+					map.load(jsonTile[4])
+					map.draw_json(ctx,jsonTile[4],zoom,x-3,y+2,move_x[0]+eventX,move_y[4]+eventY);
+				}
+				img4.src=pngTile[4];
+//img30
+				var img30= new Image();
+				img30.onload = function(){
+					ctx.drawImage(img30,move_x[6]+eventX,move_y[0]+eventY);
+				};
+				img30.onerror = function(){
+					map.load(jsonTile[30])
+					map.draw_json(ctx,jsonTile[30],zoom,x+3,y-2,move_x[6]+eventX,move_y[0]+eventY);
+				}
+				img30.src=pngTile[30];
+//img31
+				var img31= new Image();
+				img31.onload = function(){
+					ctx.drawImage(img31,move_x[6]+eventX,move_y[1]+eventY);
+				};
+				img31.onerror = function(){
+					map.load(jsonTile[31])
+					map.draw_json(ctx,jsonTile[31],zoom,x+3,y-1,move_x[6]+eventX,move_y[1]+eventY);
+				}
+				img31.src=pngTile[31];
+//img32
+				var img32= new Image();
+				img32.onload = function(){
+					ctx.drawImage(img32,move_x[6]+eventX,move_y[2]+eventY);
+				};
+				img32.onerror = function(){
+					map.load(jsonTile[32])
+					map.draw_json(ctx,jsonTile[32],zoom,x+3,y,move_x[6]+eventX,move_y[2]+eventY);
+				}
+				img32.src=pngTile[32];
+//img33
+				var img33= new Image();
+				img33.onload = function(){
+					ctx.drawImage(img33,move_x[6]+eventX,move_y[3]+eventY);
+				};
+				img33.onerror = function(){
+					map.load(jsonTile[33])
+					map.draw_json(ctx,jsonTile[33],zoom,x+3,y+1,move_x[6]+eventX,move_y[3]+eventY);
+				}
+				img33.src=pngTile[33];
+//img34
+				var img34= new Image();
+				img34.onload = function(){
+					ctx.drawImage(img34,move_x[6]+eventX,move_y[4]+eventY);
+				};
+				img34.onerror = function(){
+					map.load(jsonTile[34])
+					map.draw_json(ctx,jsonTile[34],zoom,x+3,y+2,move_x[6]+eventX,move_y[4]+eventY);
+				}
+				img34.src=pngTile[34];
+
+//img5
+				var img5= new Image();
+				img5.onload = function(){
+					ctx.drawImage(img5,move_x[1]+eventX,move_y[0]+eventY);
+				};
+				img5.onerror = function(){
+					map.load(jsonTile[5])
+					map.draw_json(ctx,jsonTile[5],zoom,x-2,y-2,move_x[1]+eventX,move_y[0]+eventY);
+				}
+				img5.src=pngTile[5];
+//img10
+				var img10= new Image();
+				img10.onload = function(){
+					ctx.drawImage(img10,move_x[2]+eventX,move_y[0]+eventY);
+				};
+				img10.onerror = function(){
+					map.load(jsonTile[10])
+					map.draw_json(ctx,jsonTile[10],zoom,x-1,y-2,move_x[2]+eventX,move_y[0]+eventY);
+				}
+				img10.src=pngTile[10];
+//img15
+				var img15= new Image();
+				img15.onload = function(){
+					ctx.drawImage(img15,move_x[3]+eventX,move_y[0]+eventY);
+				};
+				img15.onerror = function(){
+					map.load(jsonTile[15])
+					map.draw_json(ctx,jsonTile[15],zoom,x,y-2,move_x[3]+eventX,move_y[0]+eventY);
+				}
+				img15.src=pngTile[15];
+//img20
+				var img20= new Image();
+				img20.onload = function(){
+					ctx.drawImage(img20,move_x[4]+eventX,move_y[0]+eventY);
+				};
+				img20.onerror = function(){
+					map.load(jsonTile[20])
+					map.draw_json(ctx,jsonTile[20],zoom,x+1,y-2,move_x[4]+eventX,move_y[0]+eventY);
+				}
+				img20.src=pngTile[20];
+//img25
+				var img25= new Image();
+				img25.onload = function(){
+					ctx.drawImage(img25,move_x[5]+eventX,move_y[0]+eventY);
+				};
+				img25.onerror = function(){
+					map.load(jsonTile[25])
+					map.draw_json(ctx,jsonTile[25],zoom,x+2,y-2,move_x[5]+eventX,move_y[0]+eventY);
+				}
+				img25.src=pngTile[25];
+//img9
+				var img9= new Image();
+				img9.onload = function(){
+					ctx.drawImage(img9,move_x[1]+eventX,move_y[4]+eventY);
+				};
+				img9.onerror = function(){
+					map.load(jsonTile[9])
+					map.draw_json(ctx,jsonTile[9],zoom,x-2,y-2,move_x[1]+eventX,move_y[4]+eventY);
+				}
+				img9.src=pngTile[9];
+//img14
+				var img14= new Image();
+				img14.onload = function(){
+					ctx.drawImage(img14,move_x[2]+eventX,move_y[4]+eventY);
+				};
+				img14.onerror = function(){
+					map.load(jsonTile[14])
+					map.draw_json(ctx,jsonTile[14],zoom,x-1,y-2,move_x[2]+eventX,move_y[4]+eventY);
+				}
+				img14.src=pngTile[14];
+//img19
+				var img19= new Image();
+				img19.onload = function(){
+					ctx.drawImage(img19,move_x[3]+eventX,move_y[4]+eventY);
+				};
+				img19.onerror = function(){
+					map.load(jsonTile[19])
+					map.draw_json(ctx,jsonTile[19],zoom,x,y-2,move_x[3]+eventX,move_y[4]+eventY);
+				}
+				img19.src=pngTile[19];
+//img24
+				var img24= new Image();
+				img24.onload = function(){
+					ctx.drawImage(img24,move_x[4]+eventX,move_y[4]+eventY);
+				};
+				img24.onerror = function(){
+					map.load(jsonTile[24])
+					map.draw_json(ctx,jsonTile[24],zoom,x+1,y-2,move_x[4]+eventX,move_y[4]+eventY);
+				}
+				img24.src=pngTile[24];
+//img29
+				var img29= new Image();
+				img29.onload = function(){
+					ctx.drawImage(img29,move_x[5]+eventX,move_y[4]+eventY);
+				};
+				img29.onerror = function(){
+					map.load(jsonTile[29])
+					map.draw_json(ctx,jsonTile[29],zoom,x+2,y-2,move_x[5]+eventX,move_y[4]+eventY);
+				}
+				img29.src=pngTile[29];		
+
+			}//drawScreen()
+
+			drawScreen();
+
+
+		}//draw_Image
+
+		Map.prototype.tile2bbox = function(zoom,x,y) {
+
+			function tile2lon(zoom, x) {
+			return (x / Math.pow(2, zoom) * 360 - 180);
+		}
+
+		function tile2lat(zoom, y) {
+			var n = Math.PI - (2 * Math.PI * y) / Math.pow(2, zoom);
+			return (180 / Math.PI * Math.atan(0.5 * (Math.exp(n) - Math.exp(-n))));
+		}
+
+		var bbox = new Array;
+		bbox[0]= tile2lon(zoom, x);
+		bbox[3]= tile2lat(zoom, y);
+		bbox[2]= tile2lon(zoom, x+1);
+		bbox[1]= tile2lat(zoom, y+1);
+
+		} 
+	</script>
+	<script>
+		
+		var lon = 116.1520161816;
+		var lat = 39.71115201618162;
+		var zoom = 14;
+		
+		function lon2tile(lon,zoom) {
+			return (Math.floor((lon + 180) / 360 * Math.pow(2, zoom)));
+		};
+		function lat2tile(lat,zoom) {
+			return (Math.floor((1 - Math.log(Math.tan(lat * Math.PI / 180) + 1 / Math.cos(lat * Math.PI / 180)) / Math.PI) / 2 * Math.pow(2, zoom)));
+		};
+
+		var x = lon2tile(lon,zoom);
+		var y = lat2tile(lat,zoom);
+
+		var jsonName = zoom+'.'+x+'.'+y+'.'+'json';
+		var imgName = zoom+'.'+x+'.'+y+'.'+'png';
+		var tile_count = 0;
+		var map = new Map(document.getElementById("map-wrapper"),zoom,x,y);
+		
+		var bbox = new Array;
+		//var move_x=512;
+		//var move_y=256;
+		map.draw_Image(zoom,x,y);
+
+	
+
+
+/*
+		$("#map-wrapper").load(jsonName,function(responseTxt,statusTxt){
+			if(statusTxt=="success"){
+				alert("地图数据加载成功！");
+
+				tile_count++;
+				function tile2lon(zoom, x) {
+					return (x / Math.pow(2, zoom) * 360 - 180);
+				}
+
+				function tile2lat(zoom, y) {
+					var n = Math.PI - (2 * Math.PI * y) / Math.pow(2, zoom);
+					return (180 / Math.PI * Math.atan(0.5 * (Math.exp(n) - Math.exp(-n))));
+				}
+				
+				bbox[0]= tile2lon(zoom, x);
+				bbox[3]= tile2lat(zoom, y);
+				bbox[2]= tile2lon(zoom, x+1);
+				bbox[1]= tile2lat(zoom, y+1);
+
+				map.load(jsonName,256,256);
+			}
+			if(statusTxt=="error")
+				alert("本地没有地图切片！");
+		});
+*/
+
+
+		//map.load(jsonName,256,256);
+
+
+
+		//var tile_count = 0;
+
+		var flag =0;
+		var flag1 =0;
+		var changeCenter=0;
+		var eventX=0;
+		var eventY=0;			
+
+		var area = new Array;
+
+		area[0]=0;
+		area[1]=0;	
+		area[2]= 256;
+		area[3]= 256;	
+
+		
+
+		
+		/*
+		area[0]=256;
+		area[1]=0;	
+		area[2]= 1600;
+		area[3]= 256;
+		*/
+	</script>
+</body>
+</html>
