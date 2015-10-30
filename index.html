@@ -61,10 +61,18 @@
 	
 		this.$canvas.on('mousewheel', function(event) {
 			//_this.scale = Math.max(100, _this.scale - event.originalEvent.deltaY / 2);
-			if(event.originalEvent.deltaY>0)
-				_this.draw_Image(zoom+1,2*x,2*y);
-			if(event.originalEvent.deltaY<0)
+			if(event.originalEvent.deltaY>0){
+				zoom=zoom+1;
+				x=2*x;
+				y=2*y;
 				_this.draw_Image(zoom,x,y);
+			}
+			if(event.originalEvent.deltaY<0){
+				zoom=zoom-1;
+				x=Math.round(x/2);
+				y=Math.round(y/2);
+				_this.draw_Image(zoom,x,y);
+			}
 		});
 	
 
