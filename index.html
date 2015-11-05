@@ -429,11 +429,15 @@
 					ctx.drawImage(img17,move_x[3]+eventX,move_y[2]+eventY);
 				};
 				img17.onerror = function(){
-					map.load(jsonTile[17])
-					map.draw_json(ctx,jsonTile[17],zoom,x,y,move_x[3]+eventX,move_y[2]+eventY);
+					//map.load(jsonTile[17])
+				map.load("http://10.108.21.81/geoserver/v/14/13478/6219") //ywl
+				map.draw_json(ctx,"http://10.108.21.81/geoserver/v/14/13478/6219",zoom,x,y,move_x[3]+eventX,move_y[2]+eventY);
+					//map.draw_json(ctx,jsonTile[17],zoom,x,y,move_x[3]+eventX,move_y[2]+eventY);
 				}
 				//img.src="Tiles/14/13478/6219.png";
 				img17.src=pngTile[17];
+				//img17.src="http://10.108.20.196/geoserver/i/14/13477/6219";
+
 				//
 //img16
 				var img16 = new Image();
@@ -441,11 +445,13 @@
 					ctx.drawImage(img16,move_x[3]+eventX,move_y[1]+eventY);
 				};
 				img16.onerror = function(){
-					map.load(jsonTile[16])
-					map.draw_json(ctx,jsonTile[16],zoom,x,y-1,move_x[3]+eventX,move_y[1]+eventY);
+					//map.load("http://10.108.20.196/geoserver/v/14/13478/6218") //lc
+					map.load("http://10.108.21.81/geoserver/v/14/13478/6218")
+					map.draw_json(ctx,"http://10.108.21.81/geoserver/v/14/13478/6218",zoom,x,y-1,move_x[3]+eventX,move_y[1]+eventY);
 				}
-				//img.src="Tiles/14/13478/6219.png";
-				img16.src=pngTile[16];
+				//img.src="Tiles/14/13478/6218.png";
+			img16.src=pngTile[16];
+	
 //img18
 				var img18 = new Image();
 				img18.onload = function(){
