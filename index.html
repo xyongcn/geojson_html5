@@ -6,24 +6,9 @@
 	<link rel="stylesheet" href="stylesheets/maps.css" />
 </head>
 <body>
-	<h1>BIT in Liangxiang</h1>
-	<div id="site-navigation-wrapper">
-		<div id="site-navigation">
-			<nav>
-				<ul>
-					<li style="font-weight: bold;">Map</li>
-				</ul>
-			</nav>
+	<h1>GeoJSON AND IMAGE MAP</h1>
 
-			<menu>
-				<ul>
-					<li style="font-weight: bold;">Ways</li>
-				</ul>
-			</menu>
-		</div>
-	</div>
-
-	<div id="map-wrapper"></div>
+	<div id="map"></div>
 
 	<script src="javascript/jquery.js"></script>
 	<!-- <script src="d3/d3.min.js"></script>-->
@@ -32,9 +17,13 @@
 	<script src="stylesheets/building.js"></script>
 	<script src="stylesheets/railway.js"></script>
 	<script>
-	var $ = jQuery;
-
-	var Map = function(div,zoom,x,y) {
+	var $ = jQuery; //jquery框架
+/*
+Map主函数
+参数：[div id="map"] [,zoom] [,x] [,y] 即地图中心切片位置：zoom/x/y
+功能：地图初始化；地图操作-事件函数（鼠标滚动、缩放、移动）
+*/
+	var Map = function(div,zoom,x,y) {  //Map主函数功能
 		this.$div = $(div);
 
 		this.scale = 256;
@@ -42,14 +31,14 @@
 		this.data = null;
 		this.streets = new Array();
 
-		// Add canvas
+		// 增加画布 canvas
 		this.$canvas = $("<canvas id='map-canvas'></canvas>");
 		this.$canvas[0].width = this.$div.width();
 		this.$canvas[0].height = this.$div.height();
 
 		this.$div.append(this.$canvas);
 
-		// Register events
+		// 注册事件函数 events
 		var _this = this;
 		$(window).on('resize', function() {
 			clearTimeout(_this.resizeTimeout);
@@ -59,25 +48,25 @@
 			}, 500);
 		});
 	
-		this.$canvas.on('mousewheel', function(event) {
+		this.$canvas.on('mousewheel', function(event) { //鼠标滚动实现缩放功能
 			//_this.scale = Math.max(100, _this.scale - event.originalEvent.deltaY / 2);
-			if(event.originalEvent.deltaY>0){
+			if(event.originalEvent.deltaY>0){ //向上滚动-放大一个等级
 				zoom=zoom+1;
 				x=2*x;
 				y=2*y;
-				_this.draw_Image(zoom,x,y);
+				_this.draw_Image(zoom,x,y); //地图切片渲染函数
 			}
-			if(event.originalEvent.deltaY<0){
+			if(event.originalEvent.deltaY<0){ //向下滚动-缩小一个等级
 				zoom=zoom-1;
 				x=Math.round(x/2);
 				y=Math.round(y/2);
-				_this.draw_Image(zoom,x,y);
+				_this.draw_Image(zoom,x,y); //地图切片渲染函数
 			}
 		});
 	
 
-		this.$canvas.on('mousedown', function(event) {
-			_this.last_position = {
+		this.$canvas.on('mousedown', function(event) { //鼠标点拖动-实现地图拖拽功能
+			_this.last_position = { //鼠标点击的位置
 				x: event.clientX,
 				y: event.clientY
 			};
@@ -85,7 +74,7 @@
 			$(this).bind('mousemove', function(event) {
 				var addX = 0;
 				var addY = 0;
-				var delta = {
+				var delta = { //位移长度
 					x: _this.last_position.x - event.clientX,
 					y: _this.last_position.y - event.clientY
 				};
@@ -95,59 +84,40 @@
 				//bbox[0] += delta.x / (45 * _this.scale);
 				//bbox[2] += delta.x / (45 * _this.scale); 
 
-				 if(area[2] < 10) { //递归
-				 	flag=1;
-				 	area[0]=0;
-				 	//area[1]=0;	
-				 	area[2]= 246;
-				 	//area[3]= 256;
-				 }
-				 if(area[3] < 10) { //递归
-				 	flag=1;
-				 	//area[0]=0;
-				 	area[1]=0;	
-				 	//area[2]= 256;
-				 	area[3]= 246;
-				 }
-				 area[1] -= delta.y;
-				 area[3] -= delta.y;					 
-				 area[0] -= delta.x;
-				 area[2] -= delta.x; 
+				 eventX -=delta.x; //位移后的新位置
+				 eventY -=delta.y; //位移后的新位置
 
-				 eventX -=delta.x;
-				 eventY -=delta.y;
-
-				 _this.last_position = {
+				 _this.last_position = { //当前位置初始化
 				 	x: event.clientX,
 				 	y: event.clientY
 				 };	
 				 
-				 //_this.draw_Image(14,13478,6219);
-				 //向右水平移动一个以上切片（或者向左水平移动一个切片）
+				 //向右或向左水平位移超过256（一个切片的宽度）
 				 if((eventX>=256 && eventY<256 && eventY>-256)|| (eventX<=-256 && eventY<256 && eventY>-256)) {
 
 				 	addX = parseInt(eventX/256);
 				 	x=x-addX;
-				 	_this.draw_Image(zoom,x,y);
-				 	changeCenter=1;
+				 	//_this.draw_Image(zoom,x,y);
+				 	changeCenter=1;//变换中心
 				 	
 				 }
-				 
+				 //向上或向下水平位移超过256（一个切片的高度）
 				 if((eventY>=256 && eventX<256 && eventX>-256)|| (eventY<=-256 && eventX<256 && eventX>-256)) {
 
 				 	addY = parseInt(eventY/256);
 				 	y=y-addY;
-				 	_this.draw_Image(zoom,x,y);
+				 	//_this.draw_Image(zoom,x,y);
 				 	changeCenter=1;
 				 }
-
-				 if((eventY>=256 && eventX>=256)|| (eventY<=-256 && eventX<=-256)) {
+				 //向对角四个方向位移超过256
+				 if((eventY>=256 && eventX>=256)|| (eventY<=-256 && eventX<=-256) || (eventY>=256 && eventX<=-256)|| (eventY<=-256 && eventX>=256)) {
 
 				 	addY = parseInt(eventY/256);
 				 	addX = parseInt(eventX/256);
 				 	x=x-addX;
 				 	y=y-addY;
-				 	_this.draw_Image(zoom,x,y);
+				 	changeCenter=1;
+				 	//_this.draw_Image(zoom,x,y);
 				 }
 /*				 if((eventY>=256 && eventX<=-256)|| (eventY<=-256 && eventX>=256)) {
 
@@ -158,12 +128,10 @@
 				// if(eventX<256 && eventX>-256 && eventY<256 && eventY>-256)
 				 _this.draw_Image(zoom,x,y);
 				 
-
-
 				});
 		});
 
-		this.$canvas.on('mouseup', function(event) {
+		this.$canvas.on('mouseup', function(event) { //鼠标拖动结束事件函数
 			$(this).unbind('mousemove');
 		})
 
@@ -171,65 +139,86 @@
 		return this;
 		}; // Map div function -地图操
 
-		Map.prototype.load = function(jsonTile) {
+/*
+Map主函数的原型方法-加载GeoJSON数据
+
+load()-加载json数据-同步加载（即数据加载完成后再执行它之后的程序）
+loadAsync()-加载json数据-异步加载（即数据加载同时可以先执行它之后的程序，加载完成进行回调）
+*/
+		Map.prototype.load = function(jsonTile) { 
 			var _this = this;
-			$.ajaxSettings.async = false;
-			$.getJSON(jsonTile, function(data) {
-				_this.data = data;
-				//_this.draw_json(ct,jsonTile,zoom,x,y,moveX,moveY);
-
-
-				$(_this).trigger('data_updated');
+			$.ajaxSettings.async = false; //ajax同步
+			$.getJSON(jsonTile, function(data,textStatus) { //用jquery的getJSON()方法获取GeoJSON数据
+				if(textStatus=="success")
+				{
+					flag=2;
+					_this.data = data;
+					$(_this).trigger('data_updated');
+					
+				}				
 			});
 		};
 
+		Map.prototype.loadAsync = function(jsonTile) {
+			var _this = this;
+			//$.ajaxSettings.async = false; //ajax异步
+			$.getJSON(jsonTile, function(data,textStatus) { //用jquery的getJSON()方法获取GeoJSON数据
+				if(textStatus=="success")
+				{
+					flag=2;
+					_this.data = data;
+					$(_this).trigger('data_updated');
+					
+				}
+			});
+		};
+
+/*
+Map主函数的原型方法-渲染GeoJSON数据
+参数：[ct]canvas元素，[jsonTile]GeoJSON切片数据 [zoom] [,x] [,y]zoom/x/y [moveX] [,moveY]canvas中的位置
+功能：根据渲染规则读GeoJSON数据并进行渲染
+*/
 		Map.prototype.draw_json = function(ct,jsonTile,zoom,x,y,moveX,moveY) {
+			flag=2;
 			var ctx = ct;
 
 			//坐标缩放权值
 			var xmult = this.scale / (bbox[2] - bbox[0]);
 			var ymult = this.scale / (bbox[3] - bbox[1]);
 
-			var m = new Array;
-			var n = new Array;
-			var way_name = new Array;
-			var num = 0;
-			var coordinates = new Array;
+			var m = new Array; //道路填充位置x
+			var n = new Array; //道路填充位置y
+			var way_name = new Array; //道路名字 数组
+			/*
+			后期可以帮道路名字栅格化，进行图层叠加
+			道路名字栅格化填充函数
+			...add
 
-			function tile2lon(zoom, x) {
+			*/
+
+			var num = 0; //道路名字出行次数
+			
+			//geojson数据对象格式（'LineString'、'MultiLineString'、'Polygon'、'MultiPolygon'）-对应格式： 一维数组 二维数组
+			var coordinates = new Array; 
+
+			function tile2lon(zoom, x) { //地理坐标-经度转换函数
 			return (x / Math.pow(2, zoom) * 360 - 180);
 			}
 
-			function tile2lat(zoom, y) {
+			function tile2lat(zoom, y) { //地理坐标-纬度转换函数
 				var n = Math.PI - (2 * Math.PI * y) / Math.pow(2, zoom);
 				return (180 / Math.PI * Math.atan(0.5 * (Math.exp(n) - Math.exp(-n))));
 			}
 
-			//var bbox = new Array;
+			//var bbox = new Array; 切片的边框的经纬度信息
 			bbox[0]= tile2lon(zoom, x);
 			bbox[3]= tile2lat(zoom, y);
 			bbox[2]= tile2lon(zoom, x+1);
 			bbox[1]= tile2lat(zoom, y+1);
-/*
-			
 
-			function tile2lon(zoom, x) {
-				return (x / Math.pow(2, zoom) * 360 - 180);
-			}
-
-			function tile2lat(zoom, y) {
-				var n = Math.PI - (2 * Math.PI * y) / Math.pow(2, zoom);
-				return (180 / Math.PI * Math.atan(0.5 * (Math.exp(n) - Math.exp(-n))));
-			}
-			
-			bbox[0]= tile2lon(zoom, x);
-			bbox[3]= tile2lat(zoom, y);
-			bbox[2]= tile2lon(zoom, x+1);
-			bbox[1]= tile2lat(zoom, y+1);
-*/
-			
-
+			//geojson数据对象格式（'LineString'、'MultiLineString'、'Polygon'、'MultiPolygon'）-对应格式： 一维数组 二维数组			
 			 $.each(this.data.features, function(indx, obj) { 
+			 //解析json对象的jquery each()方法
 
 			 	if (obj.geometry.type === 'LineString' ){
 			 		coordinates=obj.geometry.coordinates;
@@ -241,29 +230,31 @@
 			 		coordinates=obj.geometry.coordinates[0][0];
 			 	}
 
+			 	//矢量绘制初始化
 			 	ctx.beginPath();
 
 			 	var hasInRange = false;
 			 	$.each(coordinates, function(nindx, node) {
 			 		if ((node[0] >= Math.min(bbox[0], bbox[2]) && node[0] <= Math.max(bbox[0], bbox[2]))&&(node[1] >= Math.min(bbox[1], bbox[3]) && node[1] <= Math.max(bbox[1], bbox[3]))) { hasInRange = true };
-						//if (x>=0 && x<=area[2] && y>=0 && y<=area[3]) hasInRange = true;
-					if(hasInRange) {
-						var x_ = (node[0] - bbox[0]) * xmult + moveX;
-				 		var y_ = (bbox[3] - node[1]) * ymult + moveY;
+					//判断该点是否在切片范围内
 
-				 		if (nindx === 0) {
-				 			ctx.moveTo(x_, y_);
+					if(hasInRange) { //如果该点在切片范围内
+						var x_ = (node[0] - bbox[0]) * xmult + moveX; //投影至画布上的x轴坐标
+				 		var y_ = (bbox[3] - node[1]) * ymult + moveY; //投影至画布上的y轴坐标
+
+				 		if (nindx === 0) { //矢量对象的起点
+				 			ctx.moveTo(x_, y_); //canvas函数 绘制线条
 				 			//if(obj.properties.name != undefined) {  //全部对象的名字
-				 			if(obj.properties.name != undefined && obj.properties.highway != undefined && obj.properties.highway != null){
+				 			if(obj.properties.name != undefined && obj.properties.highway != undefined && obj.properties.highway != null){ 
 				 					m[num]=x_;
 				 					n[num]=y_;
-				 					way_name[num]=obj.properties.name;
+				 					way_name[num]=obj.properties.name; //道路名字
 				 					num += 1;
 				 				}
 
 								//ctx.fillText=(obj.properties.name,m,n);
 							}
-						else {ctx.lineTo(x_, y_);}
+						else {ctx.lineTo(x_, y_);} //canvas函数-绘制线条
 					}
 			 		
 					//ctx.fillText(way_name[num],m[num],n[num]); 
@@ -273,25 +264,26 @@
 			 	if (!hasInRange) { return; };
 
 			 	if(obj.properties.highway != undefined && obj.properties.highway != null) {
-
+			 		//根据道路渲染规则"stylesheets/highway.js" 初始化道路对象
 			 		var roads = new highwayCss('highway',obj.properties.highway,14);
 
 			 		ctx.lineJoin="round";
-					ctx.strokeStyle = roads[0];
-					ctx.lineWidth = roads[2];
+					ctx.strokeStyle = roads[0]; //线条颜色
+					ctx.lineWidth = roads[2];   //线条宽度
 					//ctx.strokeDasharray = 5,10;
-					ctx.stroke();
+					ctx.stroke();               //绘制线条1（道路外围线）
 
 					ctx.lineJoin="round";
-					ctx.strokeStyle = roads[1];
-					ctx.lineWidth = roads[3];
-					ctx.stroke();
+					ctx.strokeStyle = roads[1]; //线条颜色
+					ctx.lineWidth = roads[3];   //线条宽度
+					ctx.stroke();               //绘制线条2 （道路主线-内）
 			 		
 			};//if type==way end
 
             //building water area
             
             if(obj.properties["building"] != null) {
+            	//根据建筑渲染规则"stylesheets/building.js" 初始化建筑对象
             	var building = new buildingCss('building',obj.properties.building,14);
             	ctx.strokeStyle = building[0];
             	ctx.fillStyle = building[1];
@@ -301,6 +293,7 @@
             }
 
             if(obj.properties.water != null) {
+            	//根据水域渲染规则"stylesheets/water.js" 初始化水域对象
             	var water = new waterCss('water',obj.properties,14);
             	ctx.fillStyle = water[1];
             	ctx.globalAlpha = 0.9; 
@@ -309,6 +302,7 @@
             }
 
             if(obj.properties.waterway === 'river'){
+            	//根据河流渲染规则"stylesheets/waterway.js" 初始化河流对象
             	var waterway = new waterCss('waterway',obj.properties,14);
             	ctx.strokeStyle = waterway[0];
             	ctx.lineWidth = waterway[2];
@@ -316,6 +310,7 @@
             }
 
             if(obj.properties.railway === 'subway'){
+            	//根据水域渲染规则"stylesheets/subway.js" 初始化地铁对象
             	var railway = new railwayCss('subway',obj.properties,14);
             	if(railway[6]==0) //非虚线
             	{
@@ -345,13 +340,20 @@
 			}); // .each(this.data.features, function(indx, way)
 
 			
+			/*
+			后期可以帮道路名字栅格化，进行图层叠加
+			道路名字栅格化填充函数
+			...add
+
+			*/
+			//填充道路名字
 			for (var i = 0; i < way_name.length; i++) {
 				ctx.strokeStyle = 'black';
 				ctx.fillstyle = 'black';
 				ctx.font="10px Arial";
 				ctx.textBaseline="middle";
 				ctx.textAlign = "center";
-				ctx.fillText(way_name[i],m[i],n[i]);
+				if(i%2==0) ctx.fillText(way_name[i],m[i],n[i]);
 				//相同路名只显示一次
 				for (var j = i; j <way_name.length; j++) {
 					if(way_name[j]===way_name[j+1]) j++;
@@ -362,11 +364,15 @@
 				};
 			}; 
 		}
-
+/*
+Map主函数的原型方法-地图混合渲染函数
+参数：[zoom] [,x] [,y]zoom/x/y 切片块位置（命名：缩放等级/x/y）
+功能：根据渲染规则读GeoJSON数据并进行渲染
+*/
 
 		// render MAP
 		Map.prototype.draw_Image = function(zoom,x,y){
-
+			//初始化工作
 			var _this = this;
 			var ctx = this.$canvas[0].getContext('2d');
 
@@ -375,8 +381,8 @@
 			ctx.width = this.$div.width();
 			ctx.height = this.$div.height();
 
-			var pngTile = new Array();
-			var jsonTile = new Array();
+			var pngTile = new Array();  //图片切片
+			var jsonTile = new Array(); //矢量切片
 
 		/*
 			for(var i = 0; i < 35 ; i++){
@@ -384,20 +390,21 @@
 				pngTile[i].addEventListener('load',eventImageLoad,false);
 			}
 		*/
-			var move_x = new Array();
-			var move_y = new Array();
+			var move_x = new Array(); //切片的7个横坐标位置
+			var move_y = new Array(); //切片的5个纵坐标位置
 
 
 			for (var i = 0; i < 5; i++) {
-				move_y[i] = 256*(i-1);
+				move_y[i] = 256*(i-1); //切片的5个纵坐标位置初始化
 			};	
 
 			for (var i = 0; i < 7; i++) {
-				move_x[i] = 256*(i-1);
+				move_x[i] = 256*(i-1); ////切片的7个横坐标位置初始化
 				for (var j = 0; j < 5 ; j++) {
-					pngTile[5*i+j] = 'Tiles'+'/'+zoom+'/'+(x-3+i)+'/'+(y-2+j)+'.'+'png';
-					jsonTile[5*i+j] = 'Tiles'+'/'+zoom+'/'+(x-3+i)+'/'+(y-2+j)+'.'+'json';
-
+					//图像切片命名 - 文件路径
+					pngTile[5*i+j] = zoom+'/'+(x-3+i)+'/'+(y-2+j); 
+					//本地矢量切片命名 - 文件路径
+					jsonTile[5*i+j] = 'Tiles'+'/'+zoom+'/'+(x-3+i)+'/'+(y-2+j)+'.'+'json'; 
 				};
 			};
 /*
@@ -415,7 +422,7 @@
 			//3	[3  [8  13  18  23  28]  33]
 			//4	[4   9  14  19  24  29   34]
 
-				if(changeCenter==1) {
+				if(changeCenter==1) { //触发中心点位置修正
 					move_x[3]=move_x[3]+eventX;
 					move_y[2]=move_y[2]+eventY;
 					eventX=0;
@@ -423,35 +430,179 @@
 					changeCenter=0;
 				}
 				var img = new Array();
+				//url1="http://10.108.21.81/geoserver/";
+				//url2="http://otile2.mqcdn.com/tiles/1.0.0/osm/"
+				
+				function Tilefunction(TileNum,zz,xx,yy,canvasX,canvasY)
+				{
+					var img16 = new Image();
+					flag=0
+					img16.onload = function(){
+						ctx.drawImage(img16,canvasX+eventX,canvasY+eventY);
+					};
+					img16.onerror = function(){
+						img16.onload = function(){
+						ctx.drawImage(img16,canvasX+eventX,canvasY+eventY);
+						};
+						img16.onerror = function(){
+
+							img16.onload = function(){
+							ctx.drawImage(img16,canvasX+eventX,canvasY+eventY);
+							};
+							img16.onerror = function(){
+								flag=1;	
+							}
+							//img.src="Tiles/14/13478/6218.png";
+							img16.src=url2+pngTile[TileNum]+'.png';
+						}
+						//img.src="Tiles/14/13478/6218.png";
+						img16.src=url1+'i/'+pngTile[TileNum];
+						
+					}
+					//img.src="Tiles/14/13478/6218.png";
+					img16.src='Tiles'+'/'+pngTile[TileNum]+'.'+'png';
+
+					if(flag==1){
+						map.load(jsonTile[TileNum]);
+						map.draw_json(ctx,jsonTile[TileNum],zz,xx,yy,canvasX+eventX,canvasY+eventY);
+						if(flag==2){
+							//加载本地json成功
+						}
+						if(flag==1){
+							jsonTile[TileNum]=url1+'v/'+pngTile[TileNum];
+							map.loadAsync(jsonTile[TileNum]);
+							map.draw_json(ctx,jsonTile[TileNum],zz,xx,yy,canvasX+eventX,canvasY+eventY);
+						}
+					}
+					
+				}
+
+				//Tilefunction(TileNum,zz,xx,yy,canvasX,canvasY)
+				
+				Tilefunction(16,zoom,x,y-1,move_x[3],move_y[1]);
+				Tilefunction(17,zoom,x,y,  move_x[3],move_y[2]);
+				Tilefunction(18,zoom,x,y+1,move_x[3],move_y[3]);
+
+				Tilefunction(11,zoom,x-1,y-1,move_x[2],move_y[1]);
+				Tilefunction(12,zoom,x-1,y,  move_x[2],move_y[2]);
+				Tilefunction(13,zoom,x-1,y+1,move_x[2],move_y[3]);
+
+				Tilefunction(21,zoom,x+1,y-1,move_x[4],move_y[1]);
+				Tilefunction(22,zoom,x+1,y,  move_x[4],move_y[2]);
+				Tilefunction(23,zoom,x+1,y+1,move_x[4],move_y[3]);
+
+				Tilefunction(6,zoom,x-2,y-1,move_x[1],move_y[1]);
+				Tilefunction(7,zoom,x-2,y,  move_x[1],move_y[2]);
+				Tilefunction(8,zoom,x-2,y+1,move_x[1],move_y[3]);
+
+				Tilefunction(26,zoom,x+2,y-1,move_x[5],move_y[1]);
+				Tilefunction(27,zoom,x+2,y,  move_x[5],move_y[2]);
+				Tilefunction(28,zoom,x+2,y+1,move_x[5],move_y[3]);
+
+				Tilefunction(0,zoom,x-3,y-2,move_x[0],move_y[0]);
+				Tilefunction(1,zoom,x-3,y-1,move_x[0],move_y[1]);
+				Tilefunction(2,zoom,x-3,y,  move_x[0],move_y[2]);
+				Tilefunction(3,zoom,x-3,y+1,move_x[0],move_y[3]);
+				Tilefunction(4,zoom,x-3,y+2,move_x[0],move_y[4]);
+
+				Tilefunction(30,zoom,x+3,y-2,move_x[6],move_y[0]);
+				Tilefunction(31,zoom,x+3,y-1,move_x[6],move_y[1]);
+				Tilefunction(32,zoom,x+3,y,  move_x[6],move_y[2]);
+				Tilefunction(33,zoom,x+3,y+1,move_x[6],move_y[3]);
+				Tilefunction(34,zoom,x+3,y+2,move_x[6],move_y[4]);
+
+				Tilefunction(5, zoom,x-2,y-2,move_x[1],move_y[0]);
+				Tilefunction(10,zoom,x-1,y-2,move_x[2],move_y[0]);
+				Tilefunction(15,zoom,x,y-2,  move_x[3],move_y[0]);
+				Tilefunction(20,zoom,x+1,y-2,move_x[4],move_y[0]);
+				Tilefunction(25,zoom,x+2,y-2,move_x[5],move_y[0]);
+
+				Tilefunction(9, zoom,x-2,y+2,move_x[1],move_y[4]);
+				Tilefunction(14,zoom,x-1,y+2,move_x[2],move_y[4]);
+				Tilefunction(19,zoom,x,  y+2,move_x[3],move_y[4]);
+				Tilefunction(24,zoom,x+1,y+2,move_x[4],move_y[4]);
+				Tilefunction(29,zoom,x+2,y+2,move_x[5],move_y[4]);
+
+/*
 //img17
 				var img17 = new Image();
+				flag=0;
 				img17.onload = function(){
+					//img.src="Tiles/14/13478/6219.png";
 					ctx.drawImage(img17,move_x[3]+eventX,move_y[2]+eventY);
+					flag=1;
 				};
 				img17.onerror = function(){
-					//map.load(jsonTile[17])
-				map.load("http://10.108.21.81/geoserver/v/14/13478/6219") //ywl
-				map.draw_json(ctx,"http://10.108.21.81/geoserver/v/14/13478/6219",zoom,x,y,move_x[3]+eventX,move_y[2]+eventY);
-					//map.draw_json(ctx,jsonTile[17],zoom,x,y,move_x[3]+eventX,move_y[2]+eventY);
+					map.load(jsonTile[17]);
+					map.draw_json(ctx,jsonTile[17],zoom,x,y,move_x[3]+eventX,move_y[2]+eventY);
 				}
-				//img.src="Tiles/14/13478/6219.png";
-				img17.src=pngTile[17];
-				//img17.src="http://10.108.20.196/geoserver/i/14/13477/6219";
+				img17.src='Tiles'+'/'+pngTile[17]+'.'+'png';
+				//img17.src="http://10.108.20.196/geoserver/i/14/13478/6219";
+				
+				if(flag==0){
+					var img17 = new Image();
+					img17.onload = function(){
+						ctx.drawImage(img17,move_x[3]+eventX,move_y[2]+eventY);
+					};
+					img17.onerror = function(){
+						jsonTile[17]=url1+'v/'+pngTile[17];
+						map.loadAsync(jsonTile[17]);
+						map.draw_json(ctx,jsonTile[17],zoom,x,y,move_x[3]+eventX,move_y[2]+eventY);
 
-				//
+						if(flag==0){
+							img17.src=url2+pngTile[17]+'.png';
+							ctx.drawImage(img17,move_x[3]+eventX,move_y[2]+eventY);
+						}
+					}
+					//img.src="Tiles/14/13478/6219.png";
+					img17.src=url1+'i/'+pngTile[17];
+				}
+*/
+/*
 //img16
+
 				var img16 = new Image();
+				flag=0
 				img16.onload = function(){
 					ctx.drawImage(img16,move_x[3]+eventX,move_y[1]+eventY);
 				};
 				img16.onerror = function(){
-					//map.load("http://10.108.20.196/geoserver/v/14/13478/6218") //lc
-					map.load("http://10.108.21.81/geoserver/v/14/13478/6218")
-					map.draw_json(ctx,"http://10.108.21.81/geoserver/v/14/13478/6218",zoom,x,y-1,move_x[3]+eventX,move_y[1]+eventY);
+					img16.onload = function(){
+					ctx.drawImage(img16,move_x[3]+eventX,move_y[1]+eventY);
+					};
+					img16.onerror = function(){
+
+						img16.onload = function(){
+						ctx.drawImage(img16,move_x[3]+eventX,move_y[1]+eventY);
+						};
+						img16.onerror = function(){
+							flag=1;	
+						}
+						//img.src="Tiles/14/13478/6218.png";
+						img16.src=url2+pngTile[16]+'.png';
+					}
+					//img.src="Tiles/14/13478/6218.png";
+					img16.src=url1+'i/'+pngTile[16];
+					
 				}
 				//img.src="Tiles/14/13478/6218.png";
-			img16.src=pngTile[16];
-	
+				img16.src='Tiles'+'/'+pngTile[16]+'.'+'png';
+
+				if(flag==1){
+					map.load(jsonTile[16]);
+					map.draw_json(ctx,jsonTile[16],zoom,x,y-1,move_x[3]+eventX,move_y[1]+eventY);
+					if(flag==2){
+						//加载本地json成功
+					}
+					if(flag==1){
+						jsonTile[16]=url1+'v/'+pngTile[16];
+						map.loadAsync(jsonTile[16]);
+						map.draw_json(ctx,jsonTile[16],zoom,x,y-1,move_x[3]+eventX,move_y[1]+eventY);
+					}
+				}
+*/
+
+/*	
 //img18
 				var img18 = new Image();
 				img18.onload = function(){
@@ -560,7 +711,7 @@
 				};
 				img26.onerror = function(){
 					map.load(jsonTile[26])
-					map.draw_json(ctx,jsonTile[26],zoom,x+2,y,move_x[5]+eventX,move_y[1]+eventY);
+					map.draw_json(ctx,jsonTile[26],zoom,x+2,y-1,move_x[5]+eventX,move_y[1]+eventY);
 				}
 				img26.src=pngTile[26];
 //img27
@@ -570,7 +721,7 @@
 				};
 				img27.onerror = function(){
 					map.load(jsonTile[27])
-					map.draw_json(ctx,jsonTile[27],zoom,x+2,y+1,move_x[5]+eventX,move_y[2]+eventY);
+					map.draw_json(ctx,jsonTile[27],zoom,x+2,y,move_x[5]+eventX,move_y[2]+eventY);
 				}
 				img27.src=pngTile[27];
 //img28
@@ -580,7 +731,7 @@
 				};
 				img28.onerror = function(){
 					map.load(jsonTile[28])
-					map.draw_json(ctx,jsonTile[28],zoom,x+2,y,move_x[5]+eventX,move_y[3]+eventY);
+					map.draw_json(ctx,jsonTile[28],zoom,x+2,y+1,move_x[5]+eventX,move_y[3]+eventY);
 				}
 				img28.src=pngTile[28];
 
@@ -742,7 +893,7 @@
 				};
 				img9.onerror = function(){
 					map.load(jsonTile[9])
-					map.draw_json(ctx,jsonTile[9],zoom,x-2,y-2,move_x[1]+eventX,move_y[4]+eventY);
+					map.draw_json(ctx,jsonTile[9],zoom,x-2,y+2,move_x[1]+eventX,move_y[4]+eventY);
 				}
 				img9.src=pngTile[9];
 //img14
@@ -752,7 +903,7 @@
 				};
 				img14.onerror = function(){
 					map.load(jsonTile[14])
-					map.draw_json(ctx,jsonTile[14],zoom,x-1,y-2,move_x[2]+eventX,move_y[4]+eventY);
+					map.draw_json(ctx,jsonTile[14],zoom,x-1,y+2,move_x[2]+eventX,move_y[4]+eventY);
 				}
 				img14.src=pngTile[14];
 //img19
@@ -762,7 +913,7 @@
 				};
 				img19.onerror = function(){
 					map.load(jsonTile[19])
-					map.draw_json(ctx,jsonTile[19],zoom,x,y-2,move_x[3]+eventX,move_y[4]+eventY);
+					map.draw_json(ctx,jsonTile[19],zoom,x,y+2,move_x[3]+eventX,move_y[4]+eventY);
 				}
 				img19.src=pngTile[19];
 //img24
@@ -772,7 +923,7 @@
 				};
 				img24.onerror = function(){
 					map.load(jsonTile[24])
-					map.draw_json(ctx,jsonTile[24],zoom,x+1,y-2,move_x[4]+eventX,move_y[4]+eventY);
+					map.draw_json(ctx,jsonTile[24],zoom,x+1,y+2,move_x[4]+eventX,move_y[4]+eventY);
 				}
 				img24.src=pngTile[24];
 //img29
@@ -782,17 +933,21 @@
 				};
 				img29.onerror = function(){
 					map.load(jsonTile[29])
-					map.draw_json(ctx,jsonTile[29],zoom,x+2,y-2,move_x[5]+eventX,move_y[4]+eventY);
+					map.draw_json(ctx,jsonTile[29],zoom,x+2,y+2,move_x[5]+eventX,move_y[4]+eventY);
 				}
 				img29.src=pngTile[29];		
-
+*/
 			}//drawScreen()
 
-			drawScreen();
+			drawScreen(); //混合显示
 
 
 		}//draw_Image
 
+/*
+Map主函数的原型方法-切片z/x/y转bbox（1,2,3,4）边框经纬度
+参数：[zoom] [,x] [,y]zoom/x/y 切片块位置（命名：缩放等级/x/y）
+*/
 		Map.prototype.tile2bbox = function(zoom,x,y) {
 
 			function tile2lon(zoom, x) {
@@ -813,90 +968,38 @@
 		} 
 	</script>
 	<script>
+		//中心点的经纬度坐标及缩放等级
+		var lon = 116.1520161816;    //经度
+		var lat = 39.71115201618162; //纬度
+		var zoom = 14;               //缩放等级
 		
-		var lon = 116.1520161816;
-		var lat = 39.71115201618162;
-		var zoom = 14;
-		
-		function lon2tile(lon,zoom) {
+		function lon2tile(lon,zoom) { //经度转切片坐标x函数
 			return (Math.floor((lon + 180) / 360 * Math.pow(2, zoom)));
 		};
-		function lat2tile(lat,zoom) {
+		function lat2tile(lat,zoom) { //纬度转切片坐标y函数 
 			return (Math.floor((1 - Math.log(Math.tan(lat * Math.PI / 180) + 1 / Math.cos(lat * Math.PI / 180)) / Math.PI) / 2 * Math.pow(2, zoom)));
 		};
 
-		var x = lon2tile(lon,zoom);
-		var y = lat2tile(lat,zoom);
+		var x = lon2tile(lon,zoom); //中心切片的x值
+		var y = lat2tile(lat,zoom); //中心切片的y值
 
-		var jsonName = zoom+'.'+x+'.'+y+'.'+'json';
-		var imgName = zoom+'.'+x+'.'+y+'.'+'png';
-		var tile_count = 0;
-		var map = new Map(document.getElementById("map-wrapper"),zoom,x,y);
+		var flag =0;  //地图数据源的信号函数 初始化为0；
+		var changeCenter=0; //中心位置切片修正触发信号
+		 
+		//鼠标事件位移量初始化
+		var eventX=0; 
+		var eventY=0;
+
+		// URL - 对应服务器
+		var url1="http://10.108.21.81/geoserver/";	
+		var url2 ="http://otile2.mqcdn.com/tiles/1.0.0/osm/";
+
+		//地图对象初始化
+		var map = new Map(document.getElementById("map"),zoom,x,y);
 		
-		var bbox = new Array;
-		//var move_x=512;
-		//var move_y=256;
-		map.draw_Image(zoom,x,y);
+		var bbox = new Array;     //切片边界数组
+		map.draw_Image(zoom,x,y); //绘制地图
 
-	
-
-
-/*
-		$("#map-wrapper").load(jsonName,function(responseTxt,statusTxt){
-			if(statusTxt=="success"){
-				alert("地图数据加载成功！");
-
-				tile_count++;
-				function tile2lon(zoom, x) {
-					return (x / Math.pow(2, zoom) * 360 - 180);
-				}
-
-				function tile2lat(zoom, y) {
-					var n = Math.PI - (2 * Math.PI * y) / Math.pow(2, zoom);
-					return (180 / Math.PI * Math.atan(0.5 * (Math.exp(n) - Math.exp(-n))));
-				}
-				
-				bbox[0]= tile2lon(zoom, x);
-				bbox[3]= tile2lat(zoom, y);
-				bbox[2]= tile2lon(zoom, x+1);
-				bbox[1]= tile2lat(zoom, y+1);
-
-				map.load(jsonName,256,256);
-			}
-			if(statusTxt=="error")
-				alert("本地没有地图切片！");
-		});
-*/
-
-
-		//map.load(jsonName,256,256);
-
-
-
-		//var tile_count = 0;
-
-		var flag =0;
-		var flag1 =0;
-		var changeCenter=0;
-		var eventX=0;
-		var eventY=0;			
-
-		var area = new Array;
-
-		area[0]=0;
-		area[1]=0;	
-		area[2]= 256;
-		area[3]= 256;	
-
-		
-
-		
-		/*
-		area[0]=256;
-		area[1]=0;	
-		area[2]= 1600;
-		area[3]= 256;
-		*/
 	</script>
 </body>
 </html>
