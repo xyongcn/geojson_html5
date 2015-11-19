@@ -126,7 +126,7 @@ Map主函数
 				 }
 */
 				// if(eventX<256 && eventX>-256 && eventY<256 && eventY>-256)
-				 _this.draw_Image(zoom,x,y);
+				if(eventX>50 || eventY>50) _this.draw_Image(zoom,x,y);
 				 
 				});
 		});
@@ -353,12 +353,13 @@ Map主函数的原型方法-渲染GeoJSON数据
 				ctx.font="10px Arial";
 				ctx.textBaseline="middle";
 				ctx.textAlign = "center";
-				if(i%2==0) ctx.fillText(way_name[i],m[i],n[i]);
+				if(i%3==0) ctx.fillText(way_name[i],m[i],n[i]);
 				//相同路名只显示一次
 				for (var j = i; j <way_name.length; j++) {
-					if(way_name[j]===way_name[j+1]) j++;
+					if(way_name[j]==way_name[j+1]) j++;
 					else{
 						i=j; 
+						i++;
 						break;
 					}
 				};
@@ -383,6 +384,7 @@ Map主函数的原型方法-地图混合渲染函数
 
 			var pngTile = new Array();  //图片切片
 			var jsonTile = new Array(); //矢量切片
+			var jsonT = new Array(); //矢量切片
 
 		/*
 			for(var i = 0; i < 35 ; i++){
@@ -432,7 +434,7 @@ Map主函数的原型方法-地图混合渲染函数
 				var img = new Array();
 				//url1="http://10.108.21.81/geoserver/";
 				//url2="http://otile2.mqcdn.com/tiles/1.0.0/osm/"
-				
+				flag=0;
 				function Tilefunction(TileNum,zz,xx,yy,canvasX,canvasY)
 				{
 					var img16 = new Image();
@@ -445,12 +447,14 @@ Map主函数的原型方法-地图混合渲染函数
 						ctx.drawImage(img16,canvasX+eventX,canvasY+eventY);
 						};
 						img16.onerror = function(){
-
 							img16.onload = function(){
 							ctx.drawImage(img16,canvasX+eventX,canvasY+eventY);
 							};
 							img16.onerror = function(){
-								flag=1;	
+							flag=1;
+							jsonTile[TileNum]=url1+'v/'+pngTile[TileNum];
+							map.load(jsonTile[TileNum]);
+							map.draw_json(ctx,jsonTile[TileNum],zz,xx,yy,canvasX+eventX,canvasY+eventY);
 							}
 							//img.src="Tiles/14/13478/6218.png";
 							img16.src=url2+pngTile[TileNum]+'.png';
@@ -465,17 +469,12 @@ Map主函数的原型方法-地图混合渲染函数
 					if(flag==1){
 						map.load(jsonTile[TileNum]);
 						map.draw_json(ctx,jsonTile[TileNum],zz,xx,yy,canvasX+eventX,canvasY+eventY);
-						if(flag==2){
-							//加载本地json成功
-						}
-						if(flag==1){
-							jsonTile[TileNum]=url1+'v/'+pngTile[TileNum];
-							map.loadAsync(jsonTile[TileNum]);
-							map.draw_json(ctx,jsonTile[TileNum],zz,xx,yy,canvasX+eventX,canvasY+eventY);
-						}
+
 					}
 					
 				}
+
+
 
 				//Tilefunction(TileNum,zz,xx,yy,canvasX,canvasY)
 				
