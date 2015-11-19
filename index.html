@@ -126,7 +126,7 @@ Map主函数
 				 }
 */
 				// if(eventX<256 && eventX>-256 && eventY<256 && eventY>-256)
-				if(eventX>50 || eventY>50) _this.draw_Image(zoom,x,y);
+				if(eventX>50 || eventY>50 || eventX<-50 || eventY<-50) _this.draw_Image(zoom,x,y);
 				 
 				});
 		});
@@ -970,7 +970,7 @@ Map主函数的原型方法-切片z/x/y转bbox（1,2,3,4）边框经纬度
 		//中心点的经纬度坐标及缩放等级
 		var lon = 116.1520161816;    //经度
 		var lat = 39.71115201618162; //纬度
-		var zoom = 14;               //缩放等级
+		var zoom = 13;               //缩放等级
 		
 		function lon2tile(lon,zoom) { //经度转切片坐标x函数
 			return (Math.floor((lon + 180) / 360 * Math.pow(2, zoom)));
