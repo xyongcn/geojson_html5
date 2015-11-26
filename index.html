@@ -13,6 +13,7 @@
 	    <button id="zoom-in">zoom in + </button>
 	</div>
 
+	<script src="geojson_html5-master/javascript/storage.js"></script>
 	<script src="geojson_html5-master/javascript/jquery.js"></script>
 	<script src="geojson_html5-master/stylesheets/highway.js"></script>
 	<script src="geojson_html5-master/stylesheets/water.js"></script>
@@ -31,6 +32,7 @@ Map主函数
 		this.scale = 256;
 
 		this.data = null;
+
 		this.streets = new Array();
 
 		// 增加画布 canvas
@@ -46,6 +48,7 @@ Map主函数
 		    zoom=zoom+1;
 			x=2*x;
 			y=2*y;
+			changeCenter=1;
 			_this.draw_Image(zoom,x,y);
 		};
 
@@ -53,6 +56,7 @@ Map主函数
 		    zoom=zoom-1;
 			x=Math.round(x/2);
 			y=Math.round(y/2);
+			changeCenter=1;
 			_this.draw_Image(zoom,x,y);
 		};
 
@@ -70,12 +74,14 @@ Map主函数
 				zoom=zoom+1;
 				x=2*x;
 				y=2*y;
+				changeCenter=1;
 				_this.draw_Image(zoom,x,y); //地图切片渲染函数
 			}
 			if(event.originalEvent.deltaY<0){ //向下滚动-缩小一个等级
 				zoom=zoom-1;
 				x=Math.round(x/2);
 				y=Math.round(y/2);
+				changeCenter=1;
 				_this.draw_Image(zoom,x,y); //地图切片渲染函数
 			}
 		});
@@ -215,7 +221,6 @@ loadAsync()-加载json数据-异步加载（即数据加载同时可以先执行
 			$.getJSON(jsonTile, function(data,textStatus) { //用jquery的getJSON()方法获取GeoJSON数据
 				if(textStatus=="success")
 				{
-					flag=2;
 					_this.data = data;
 					$(_this).trigger('data_updated');
 					
@@ -229,7 +234,6 @@ loadAsync()-加载json数据-异步加载（即数据加载同时可以先执行
 			$.getJSON(jsonTile, function(data,textStatus) { //用jquery的getJSON()方法获取GeoJSON数据
 				if(textStatus=="success")
 				{
-					flag=2;
 					_this.data = data;
 					$(_this).trigger('data_updated');
 					
@@ -242,8 +246,7 @@ Map主函数的原型方法-渲染GeoJSON数据
 参数：[ct]canvas元素，[jsonTile]GeoJSON切片数据 [zoom] [,x] [,y]zoom/x/y [moveX] [,moveY]canvas中的位置
 功能：根据渲染规则读GeoJSON数据并进行渲染
 */
-		Map.prototype.draw_json = function(ct,jsonTile,zoom,x,y,moveX,moveY) {
-			flag=2;
+		Map.prototype.draw_json = function(ct,TileNum,zoom,x,y,moveX,moveY) {
 			var ctx = ct;
 
 			//坐标缩放权值
@@ -281,7 +284,7 @@ Map主函数的原型方法-渲染GeoJSON数据
 			bbox[1]= tile2lat(zoom, y+1);
 
 			//geojson数据对象格式（'LineString'、'MultiLineString'、'Polygon'、'MultiPolygon'）-对应格式： 一维数组 二维数组			
-			 $.each(this.data.features, function(indx, obj) { 
+			 $.each(store[TileNum].get('features'), function(indx, obj) { 
 			 //解析json对象的jquery each()方法
 
 			 	if (obj.geometry.type === 'LineString' ){
@@ -449,6 +452,8 @@ Map主函数的原型方法-地图混合渲染函数
 			var pngTile = new Array();  //图片切片
 			var jsonTile = new Array(); //矢量切片
 			var jsonT = new Array(); //矢量切片
+			// Create or get an existing store
+
 
 		/*
 			for(var i = 0; i < 35 ; i++){
@@ -504,24 +509,42 @@ Map主函数的原型方法-地图混合渲染函数
 					move_y[2]=move_y[2]+eventY;
 					eventX=0;
 					eventY=0;
-					changeCenter=0;
+					
+					for(var i=0;i<49;i++){
+						jsonTile[i]=url1+'v/'+pngTile[i];
+						store[i] = Storage('store['+i+']');
+						//map.load(jsonTile[i]);
+
+						$.ajaxSettings.async = false; //ajax同步
+						$.getJSON(jsonTile[i], function(data,textStatus) { //用jquery的getJSON()方法获取GeoJSON数据
+							if(textStatus=="success")
+							{
+								if(store[i].name == 'QuotaExceededError'){
+									store[i].clear();
+									store[i].set('features',data.features);
+								}
+								else store[i].set('features',data.features);
+								$(_this).trigger('data_updated');
+							}	
+						});
+
+						//store[i].set('features',_this.data.features);
+
+						changeCenter=0;
+					}
+									
 				}
 				var img = new Array();
 				//url1="http://10.108.21.81/geoserver/";
 				//url2="http://otile2.mqcdn.com/tiles/1.0.0/osm/"
-				flag=0;
 				function Tilefunction(TileNum,zz,xx,yy,canvasX,canvasY)
 				{
 					var img16 = new Image();
-					flag=0;
 					img16.onload = function(){
 						ctx.drawImage(img16,canvasX+eventX,canvasY+eventY);
 					};
 					img16.onerror = function(){
-						flag=1;
-						jsonTile[TileNum]=url1+'v/'+pngTile[TileNum];
-						map.load(jsonTile[TileNum]);
-						map.draw_json(ctx,jsonTile[TileNum],zz,xx,yy,canvasX+eventX,canvasY+eventY);
+						map.draw_json(ctx,TileNum,zz,xx,yy,canvasX+eventX,canvasY+eventY);
 					}
 					img16.src=url1+'i/'+pngTile[TileNum];			
 				}
@@ -628,7 +651,7 @@ Map主函数的原型方法-切片z/x/y转bbox（1,2,3,4）边框经纬度
 		var y = lat2tile(lat,zoom); //中心切片的y值
 
 		var flag =0;  //地图数据源的信号函数 初始化为0；
-		var changeCenter=0; //中心位置切片修正触发信号
+		var changeCenter=1; //中心位置切片修正触发信号
 		 
 		//鼠标事件位移量初始化
 		var eventX=0; 
@@ -637,6 +660,8 @@ Map主函数的原型方法-切片z/x/y转bbox（1,2,3,4）边框经纬度
 		// URL - 对应服务器
 		var url1="http://10.108.21.81/geoserver/";	
 		var url2 ="http://otile2.mqcdn.com/tiles/1.0.0/osm/";
+
+		var store = new Array;
 
 		//地图对象初始化
 		var map = new Map(document.getElementById("map"),zoom,x,y);
