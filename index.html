@@ -219,6 +219,7 @@ Map主函数
 				 	up=0;
 				 	//_this.draw_Image(zoom,x,y);
 				 }
+<<<<<<< HEAD
 
 				 if((eventY<=-256 && eventX<=-256)) {
 
@@ -263,6 +264,10 @@ Map主函数
 				 }
 				//if(eventX>50 || eventY>50 || eventX<-50 || eventY<-50) 
 				_this.draw_Image(zoom,x,y);
+=======
+
+				if(eventX>50 || eventY>50 || eventX<-50 || eventY<-50) _this.draw_Image(zoom,x,y);
+>>>>>>> master
 				 
 				});
 		});
@@ -617,6 +622,7 @@ Map主函数的原型方法-地图混合渲染函数
 					
 					for(var i=0;i<49;i++){
 						jsonTile[i]=url1+'v/'+pngTile[i];
+<<<<<<< HEAD
 						var str='store['+i+']';
 						store[i] = Storage(str);
 						//map.load(jsonTile[i]);
@@ -645,6 +651,28 @@ Map主函数的原型方法-地图混合渲染函数
 				 	down=0;
 				 	left=0;
 				 	up=0;
+=======
+						store[i] = Storage('store['+i+']');
+						//map.load(jsonTile[i]);
+
+						$.ajaxSettings.async = false; //ajax同步
+						$.getJSON(jsonTile[i], function(data,textStatus) { //用jquery的getJSON()方法获取GeoJSON数据
+							if(textStatus=="success")
+							{
+								if(store[i].name == 'QuotaExceededError'){
+									store[i].clear();
+									store[i].set('features',data.features);
+								}
+								else store[i].set('features',data.features);
+								$(_this).trigger('data_updated');
+							}	
+						});
+
+						//store[i].set('features',_this.data.features);
+
+						changeCenter=0;
+					}
+>>>>>>> master
 									
 				}
 				var img = new Array();
@@ -652,6 +680,7 @@ Map主函数的原型方法-地图混合渲染函数
 				//url2="http://otile2.mqcdn.com/tiles/1.0.0/osm/"
 				function Tilefunction(TileNum,zz,xx,yy,canvasX,canvasY)
 				{
+<<<<<<< HEAD
 					//var img16 = new Image();
 					//img16.onload = function(){
 					//	flag=0;
@@ -663,6 +692,16 @@ Map主函数的原型方法-地图混合渲染函数
 					//}
 					//img16.src=url1+'i/'+pngTile[TileNum];	
 					//img16.src=url2+pngTile[TileNum]+'.png';			
+=======
+					var img16 = new Image();
+					img16.onload = function(){
+						ctx.drawImage(img16,canvasX+eventX,canvasY+eventY);
+					};
+					img16.onerror = function(){
+						map.draw_json(ctx,TileNum,zz,xx,yy,canvasX+eventX,canvasY+eventY);
+					}
+					img16.src=url1+'i/'+pngTile[TileNum];			
+>>>>>>> master
 				}
 				var countTile=0;
 				for (var i = 0; i < 7; i++) {
