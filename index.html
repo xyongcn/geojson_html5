@@ -109,31 +109,96 @@ Map主函数
 				 	y: event.originalEvent.touches[0].clientY
 				 };	
 				 
-				 //向右或向左水平位移超过256（一个切片的宽度）
-				 if((eventX>=256 && eventY<256 && eventY>-256)|| (eventX<=-256 && eventY<256 && eventY>-256)) {
+				 //向右水平位移超过256（一个切片的宽度）浏览器左栏向服务器请求切片
+				 if(eventX>=512 && eventY<256 && eventY>-256) {
 
 				 	addX = parseInt(eventX/256);
 				 	x=x-addX;
 				 	//_this.draw_Image(zoom,x,y);
 				 	changeCenter=1;//变换中心
+				 	right=1;
 				 	
 				 }
-				 //向上或向下水平位移超过256（一个切片的高度）
-				 if((eventY>=256 && eventX<256 && eventX>-256)|| (eventY<=-256 && eventX<256 && eventX>-256)) {
+				 if(eventX<=-512 && eventY<256 && eventY>-256){
+				 	addX = parseInt(eventX/256);
+				 	x=x-addX;
+				 	//_this.draw_Image(zoom,x,y);
+				 	changeCenter=1;//变换中心
+				 	left=1;
+				 }
+
+
+				 //向下水平位移超过256（一个切片的高度）浏览器上部向服务器请求切片
+				 if(eventY>=512 && eventX<256 && eventX>-256) {
 
 				 	addY = parseInt(eventY/256);
 				 	y=y-addY;
 				 	//_this.draw_Image(zoom,x,y);
 				 	changeCenter=1;
+				 	down=1;
+				 }
+
+				 if(eventY<=-512 && eventX<256 && eventX>-256){
+				 	addY = parseInt(eventY/256);
+				 	y=y-addY;
+				 	//_this.draw_Image(zoom,x,y);
+				 	changeCenter=1;
+				 	up=1;
 				 }
 				 //向对角四个方向位移超过256
-				 if((eventY>=256 && eventX>=256)|| (eventY<=-256 && eventX<=-256) || (eventY>=256 && eventX<=-256)|| (eventY<=-256 && eventX>=256)) {
+				 if((eventY>=256 && eventX>=256)) {
 
 				 	addY = parseInt(eventY/256);
 				 	addX = parseInt(eventX/256);
 				 	x=x-addX;
 				 	y=y-addY;
 				 	changeCenter=1;
+				 	right=1;
+				 	down=1;
+				 	left=0;
+				 	up=0;
+				 	//_this.draw_Image(zoom,x,y);
+				 }
+
+				 if((eventY<=-256 && eventX<=-256)) {
+
+				 	addY = parseInt(eventY/256);
+				 	addX = parseInt(eventX/256);
+				 	x=x-addX;
+				 	y=y-addY;
+				 	changeCenter=1;
+				 	right=0;
+				 	down=0;
+				 	left=1;
+				 	up=1;
+				 	//_this.draw_Image(zoom,x,y);
+				 }
+
+				 if((eventY>=256 && eventX<=-256)) {
+
+				 	addY = parseInt(eventY/256);
+				 	addX = parseInt(eventX/256);
+				 	x=x-addX;
+				 	y=y-addY;
+				 	changeCenter=1;
+				 	right=0;
+				 	down=1;
+				 	left=1;
+				 	up=0;
+				 	//_this.draw_Image(zoom,x,y);
+				 }
+
+				 if((eventY<=-256 && eventX>=256)) {
+
+				 	addY = parseInt(eventY/256);
+				 	addX = parseInt(eventX/256);
+				 	x=x-addX;
+				 	y=y-addY;
+				 	changeCenter=1;
+				 	right=1;
+				 	down=0;
+				 	left=0;
+				 	up=1;
 				 	//_this.draw_Image(zoom,x,y);
 				 }
 
@@ -219,7 +284,6 @@ Map主函数
 				 	up=0;
 				 	//_this.draw_Image(zoom,x,y);
 				 }
-<<<<<<< HEAD
 
 				 if((eventY<=-256 && eventX<=-256)) {
 
@@ -264,10 +328,6 @@ Map主函数
 				 }
 				//if(eventX>50 || eventY>50 || eventX<-50 || eventY<-50) 
 				_this.draw_Image(zoom,x,y);
-=======
-
-				if(eventX>50 || eventY>50 || eventX<-50 || eventY<-50) _this.draw_Image(zoom,x,y);
->>>>>>> master
 				 
 				});
 		});
@@ -593,7 +653,7 @@ Map主函数的原型方法-地图混合渲染函数
 				drawScreen();
 			}
 */
-			function drawScreen(){
+			//function drawScreen(){
 				     
 				     //切片位置视图
 			//	 0   1  2   3   4   5    6
@@ -614,19 +674,19 @@ Map主函数的原型方法-地图混合渲染函数
 			//5	[5  [12 19  26  33  40]  47]
 			//6	[6   13 20  27  34  41   48]
 
-				if(changeCenter==1) { //触发中心点位置修正
-					move_x[3]=move_x[3]+eventX;
-					move_y[2]=move_y[2]+eventY;
-					eventX=0;
-					eventY=0;
-					
-					for(var i=0;i<49;i++){
-						jsonTile[i]=url1+'v/'+pngTile[i];
-<<<<<<< HEAD
-						var str='store['+i+']';
-						store[i] = Storage(str);
-						//map.load(jsonTile[i]);
-						if(flag==1||flag==0){
+
+			if(changeCenter==1) { //触发中心点位置修正
+				move_x[3]=move_x[3]+eventX;
+				move_y[2]=move_y[2]+eventY;
+				eventX=0;
+				eventY=0;
+				if(flag==1){
+					if(right==0&&left==0&&up==0&&down==0){
+						for(var i=0;i<49;i++){
+							jsonTile[i]=url1+'v/'+pngTile[i];
+							var str='store['+i+']';
+							store[i] = Storage(str);
+							//map.load(jsonTile[i]);							
 							$.ajaxSettings.async = false; //ajax同步
 							$.getJSON(jsonTile[i], function(data,textStatus) { //用jquery的getJSON()方法获取GeoJSON数据
 								if(textStatus=="success")
@@ -641,128 +701,151 @@ Map主函数的原型方法-地图混合渲染函数
 									$(_this).trigger('data_updated');
 								}	
 							});
+						}												
+					}
 
+					if(right==0&&left==0&&up==0&&down==1){//向下拖动
+						for(var i=0;i<7;i++){
+							for(var j=6;j>=2;j--){
+								store[i*7+j]=store[i*7+j-2];
+							}							
 						}
-						
-						
+						for(var i=0;i<7;i++){
+							for(var j=0;j<2;j++){
+								//store[i*7+j]
+								jsonTile[i*7+j]=url1+'v/'+pngTile[i*7+j];
+								var str='store['+(i*7+j)+']';
+								store[i*7+j] = Storage(str);
+								//map.load(jsonTile[i]);							
+								$.ajaxSettings.async = false; //ajax同步
+								$.getJSON(jsonTile[i*7+j], function(data,textStatus) { //用jquery的getJSON()方法获取GeoJSON数据
+									if(textStatus=="success")
+									{
+										store[i*7+j].set('features',data.features);
+										$(_this).trigger('data_updated');
+									}	
+								});								
+							}							
+						}												
 					}
-					changeCenter=0;
-					right=0;
-				 	down=0;
-				 	left=0;
-				 	up=0;
-=======
-						store[i] = Storage('store['+i+']');
-						//map.load(jsonTile[i]);
 
-						$.ajaxSettings.async = false; //ajax同步
-						$.getJSON(jsonTile[i], function(data,textStatus) { //用jquery的getJSON()方法获取GeoJSON数据
-							if(textStatus=="success")
-							{
-								if(store[i].name == 'QuotaExceededError'){
-									store[i].clear();
+					if(right==0&&left==0&&up==1&&down==0){//向上拖动
+						for(var i=0;i<7;i++){
+							for(var j=0;j<5;j++){
+								store[i*7+j]=store[i*7+j+2];
+							}							
+						}
+						for(var i=0;i<7;i++){
+							for(var j=5;j<7;j++){
+								//store[i*7+j]
+								jsonTile[i*7+j]=url1+'v/'+pngTile[i*7+j];
+								var str='store['+(i*7+j)+']';
+								store[i*7+j] = Storage(str);
+								//map.load(jsonTile[i]);							
+								$.ajaxSettings.async = false; //ajax同步
+								$.getJSON(jsonTile[i*7+j], function(data,textStatus) { //用jquery的getJSON()方法获取GeoJSON数据
+									if(textStatus=="success")
+									{
+										store[i*7+j].set('features',data.features);
+										$(_this).trigger('data_updated');
+									}	
+								});								
+							}							
+						}												
+					}
+
+					if(right==0&&left==1&&up==0&&down==0){//向左拖动
+						for(var i=0;i<35;i++){
+							//var str='store['+i+']';
+							//store[i] = Storage(str);
+							store[i]=store[i+14];
+						}
+
+						for(var i=35;i<49;i++){
+							jsonTile[i]=url1+'v/'+pngTile[i];
+							var str='store['+i+']';
+							store[i] = Storage(str);
+							//map.load(jsonTile[i]);							
+							$.ajaxSettings.async = false; //ajax同步
+							$.getJSON(jsonTile[i], function(data,textStatus) { //用jquery的getJSON()方法获取GeoJSON数据
+								if(textStatus=="success")
+								{
+									/*
+									if(store[i].name == 'QuotaExceededError'){
+										store[i].clear();
+										store[i].set('features',data.features);
+									}
+									*/
 									store[i].set('features',data.features);
-								}
-								else store[i].set('features',data.features);
-								$(_this).trigger('data_updated');
-							}	
-						});
-
-						//store[i].set('features',_this.data.features);
-
-						changeCenter=0;
+									$(_this).trigger('data_updated');
+								}	
+							});
+						}												
 					}
->>>>>>> master
-									
+
+					if(right==1&&left==0&&up==0&&down==0){//向右拖动
+						for(var i=48;i>=14;i--){
+							//var str='store['+i+']';
+							//store[i] = Storage(str);
+							store[i]=store[i-14];
+						}
+						for(var i=0;i<14;i++){
+							jsonTile[i]=url1+'v/'+pngTile[i];
+							var str='store['+i+']';
+							store[i] = Storage(str);
+							//map.load(jsonTile[i]);							
+							$.ajaxSettings.async = false; //ajax同步
+							$.getJSON(jsonTile[i], function(data,textStatus) { //用jquery的getJSON()方法获取GeoJSON数据
+								if(textStatus=="success")
+								{
+									/*
+									if(store[i].name == 'QuotaExceededError'){
+										store[i].clear();
+										store[i].set('features',data.features);
+									}
+									*/
+									store[i].set('features',data.features);
+									$(_this).trigger('data_updated');
+								}	
+							});
+						}
+					}
+
+
+
+
+
 				}
-				var img = new Array();
-				//url1="http://10.108.21.81/geoserver/";
-				//url2="http://otile2.mqcdn.com/tiles/1.0.0/osm/"
-				function Tilefunction(TileNum,zz,xx,yy,canvasX,canvasY)
-				{
-<<<<<<< HEAD
-					//var img16 = new Image();
-					//img16.onload = function(){
-					//	flag=0;
-					//	ctx.drawImage(img16,canvasX+eventX,canvasY+eventY);
-					//};
-					//img16.onerror = function(){
-						flag=1;
-						map.draw_json(ctx,TileNum,zz,xx,yy,canvasX+eventX,canvasY+eventY);
-					//}
-					//img16.src=url1+'i/'+pngTile[TileNum];	
-					//img16.src=url2+pngTile[TileNum]+'.png';			
-=======
+				
+
+				changeCenter=0;
+				right=0;
+			 	down=0;
+			 	left=0;
+			 	up=0;
+
+			}
+
+			function Tilefunction(TileNum,zz,xx,yy,canvasX,canvasY)
+			{
+				if(flag==0) {
 					var img16 = new Image();
-					img16.onload = function(){
-						ctx.drawImage(img16,canvasX+eventX,canvasY+eventY);
-					};
-					img16.onerror = function(){
-						map.draw_json(ctx,TileNum,zz,xx,yy,canvasX+eventX,canvasY+eventY);
-					}
-					img16.src=url1+'i/'+pngTile[TileNum];			
->>>>>>> master
-				}
-				var countTile=0;
-				for (var i = 0; i < 7; i++) {
-					for(var j = 0; j < 7; j++){
-						Tilefunction(countTile++,zoom,x-3+i,y-3+j,move_x[i],move_y[j]);
-					}
-					
+					img16.src=url1+'i/'+pngTile[TileNum];	
+					//img16.src=url2+pngTile[TileNum]+'.png';	
+					ctx.drawImage(img16,canvasX+eventX,canvasY+eventY);
 				};
+				if(flag==1) {
+					map.draw_json(ctx,TileNum,zz,xx,yy,canvasX+eventX,canvasY+eventY);
+				};
+			}
 
-
-				//Tilefunction(TileNum,zz,xx,yy,canvasX,canvasY)
-/*				
-				Tilefunction(16,zoom,x,y-1,move_x[3],move_y[1]);
-				Tilefunction(17,zoom,x,y,  move_x[3],move_y[2]);
-				Tilefunction(18,zoom,x,y+1,move_x[3],move_y[3]);
-
-				Tilefunction(11,zoom,x-1,y-1,move_x[2],move_y[1]);
-				Tilefunction(12,zoom,x-1,y,  move_x[2],move_y[2]);
-				Tilefunction(13,zoom,x-1,y+1,move_x[2],move_y[3]);
-
-				Tilefunction(21,zoom,x+1,y-1,move_x[4],move_y[1]);
-				Tilefunction(22,zoom,x+1,y,  move_x[4],move_y[2]);
-				Tilefunction(23,zoom,x+1,y+1,move_x[4],move_y[3]);
-
-				Tilefunction(6,zoom,x-2,y-1,move_x[1],move_y[1]);
-				Tilefunction(7,zoom,x-2,y,  move_x[1],move_y[2]);
-				Tilefunction(8,zoom,x-2,y+1,move_x[1],move_y[3]);
-
-				Tilefunction(26,zoom,x+2,y-1,move_x[5],move_y[1]);
-				Tilefunction(27,zoom,x+2,y,  move_x[5],move_y[2]);
-				Tilefunction(28,zoom,x+2,y+1,move_x[5],move_y[3]);
-
-				Tilefunction(0,zoom,x-3,y-2,move_x[0],move_y[0]);
-				Tilefunction(1,zoom,x-3,y-1,move_x[0],move_y[1]);
-				Tilefunction(2,zoom,x-3,y,  move_x[0],move_y[2]);
-				Tilefunction(3,zoom,x-3,y+1,move_x[0],move_y[3]);
-				Tilefunction(4,zoom,x-3,y+2,move_x[0],move_y[4]);
-
-				Tilefunction(30,zoom,x+3,y-2,move_x[6],move_y[0]);
-				Tilefunction(31,zoom,x+3,y-1,move_x[6],move_y[1]);
-				Tilefunction(32,zoom,x+3,y,  move_x[6],move_y[2]);
-				Tilefunction(33,zoom,x+3,y+1,move_x[6],move_y[3]);
-				Tilefunction(34,zoom,x+3,y+2,move_x[6],move_y[4]);
-
-				Tilefunction(5, zoom,x-2,y-2,move_x[1],move_y[0]);
-				Tilefunction(10,zoom,x-1,y-2,move_x[2],move_y[0]);
-				Tilefunction(15,zoom,x,y-2,  move_x[3],move_y[0]);
-				Tilefunction(20,zoom,x+1,y-2,move_x[4],move_y[0]);
-				Tilefunction(25,zoom,x+2,y-2,move_x[5],move_y[0]);
-
-				Tilefunction(9, zoom,x-2,y+2,move_x[1],move_y[4]);
-				Tilefunction(14,zoom,x-1,y+2,move_x[2],move_y[4]);
-				Tilefunction(19,zoom,x,  y+2,move_x[3],move_y[4]);
-				Tilefunction(24,zoom,x+1,y+2,move_x[4],move_y[4]);
-				Tilefunction(29,zoom,x+2,y+2,move_x[5],move_y[4]);
-*/
-
-			}//drawScreen()
-
-			drawScreen(); //混合显示
-
+			var countTile=0;
+			for (var i = 0; i < 7; i++) {
+				for(var j = 0; j < 7; j++){
+					Tilefunction(countTile++,zoom,x-3+i,y-3+j,move_x[i],move_y[j]);
+				}
+				
+			};
 
 		}//draw_Image
 
@@ -790,10 +873,11 @@ Map主函数的原型方法-切片z/x/y转bbox（1,2,3,4）边框经纬度
 		} 
 	</script>
 	<script>
+
 		//中心点的经纬度坐标及缩放等级
 		var lon = 116.1520161816;    //经度
 		var lat = 39.71115201618162; //纬度
-		var zoom = 13;               //缩放等级
+		var zoom = 14;               //缩放等级
 		
 		function lon2tile(lon,zoom) { //经度转切片坐标x函数
 			return (Math.floor((lon + 180) / 360 * Math.pow(2, zoom)));
@@ -805,9 +889,9 @@ Map主函数的原型方法-切片z/x/y转bbox（1,2,3,4）边框经纬度
 		var x = lon2tile(lon,zoom); //中心切片的x值
 		var y = lat2tile(lat,zoom); //中心切片的y值
 
-		var flag =0;  //地图数据源的信号函数 初始化为0；
+		var flag =1;  //地图数据源的信号函数 初始化为0；
 		var changeCenter=1; //中心位置切片修正触发信号
-		 
+	 
 		//鼠标事件位移量初始化
 		var eventX=0; 
 		var eventY=0;
@@ -817,6 +901,17 @@ Map主函数的原型方法-切片z/x/y转bbox（1,2,3,4）边框经纬度
 		var url2 ="http://otile2.mqcdn.com/tiles/1.0.0/osm/";
 
 		var store = new Array;
+
+		var img16 = new Image();
+		img16.onload = function(){
+			flag=0;
+			//alert("flag="+flag);
+		}
+		img16.onerror = function(){
+			flag=1;
+			//alert("flag="+flag);
+		}
+		img16.src=url1+'i/'+zoom+'/'+x+'/'+y;
 
 		//地图对象初始化
 		var map = new Map(document.getElementById("map"),zoom,x,y);
