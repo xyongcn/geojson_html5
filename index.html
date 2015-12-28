@@ -11,6 +11,8 @@
 	<div id="map">
 		<button id="zoom-out">zoom out - </button>
 	    <button id="zoom-in">zoom in + </button>
+		<button id="vector map">矢量地图 </button>
+	    <button id="img map">栅格地图 </button>	    
 	</div>
 
 	<script src="geojson_html5-master/javascript/storage.js"></script>
@@ -44,6 +46,17 @@ Map主函数
 
 		// 注册事件函数 events
 		var _this = this;
+		document.getElementById('img map').onclick = function() {
+			flag=0;
+			_this.draw_Image(zoom,x,y);
+
+		}
+		document.getElementById('vector map').onclick = function() {
+			flag=1;
+			_this.draw_Image(zoom,x,y);
+		}
+
+
 		document.getElementById('zoom-in').onclick = function() {
 		    zoom=zoom+1;
 			x=2*x;
@@ -417,13 +430,13 @@ Map主函数的原型方法-渲染GeoJSON数据
 			 $.each(store[TileNum].get('features'), function(indx, obj) { 
 			 //解析json对象的jquery each()方法
 
-			 	if (obj.geometry.type === 'LineString' ){
+			 	if (obj.geometry.type == 'LineString' ){
 			 		coordinates=obj.geometry.coordinates;
 			 	}
-			 	if (obj.geometry.type === 'MultiLineString' || obj.geometry.type === 'Polygon' ){
+			 	if (obj.geometry.type == 'MultiLineString' || obj.geometry.type == 'Polygon' ){
 			 		coordinates=obj.geometry.coordinates[0];
 			 	}
-			 	if (obj.geometry.type === 'MultiPolygon' ){
+			 	if (obj.geometry.type == 'MultiPolygon' ){
 			 		coordinates=obj.geometry.coordinates[0][0];
 			 	}
 
@@ -532,9 +545,10 @@ Map主函数的原型方法-渲染GeoJSON数据
 	            	//根据水域渲染规则"stylesheets/water.js" 初始化水域对象
 	            	var water = new waterCss('water',obj.properties,zoom);
 	            	ctx.fillStyle = water[1];
-	            	ctx.globalAlpha = 0.9; 
-	            	ctx.fill();
-	            	//ctx.stroke();
+	            	ctx.strokeStyle = water[1];
+	            	ctx.globalAlpha = 0.7; 
+	            	//ctx.fill();
+	            	ctx.stroke();
 	            }
 
 	            if(obj.properties.waterway === 'river'){
@@ -582,8 +596,8 @@ Map主函数的原型方法-渲染GeoJSON数据
 			...add
 
 			*/
-			//填充道路名字
-/*			for (var i = 0; i < way_name.length; i++) {
+/*			//填充道路名字
+			for (var i = 0; i < way_name.length; i++) {
 				ctx.strokeStyle = 'black';
 				ctx.fillstyle = 'black';
 				ctx.font="10px Arial";
@@ -1077,11 +1091,11 @@ Map主函数的原型方法-切片z/x/y转bbox（1,2,3,4）边框经纬度
 		} 
 	</script>
 	<script>
-//116.1520161816  39.71115201618162
+//116.1520161816  39.71115201618162  116.3912  39.9059
 		//中心点的经纬度坐标及缩放等级
-		var lon = 116.3912;    //经度
-		var lat = 39.9059; //纬度
-		var zoom = 16;               //缩放等级
+		var lon = 116.3912;    //经度116.4161
+		var lat = 39.9059; //纬度39.9165
+		var zoom = 15;               //缩放等级
 		
 		function lon2tile(lon,zoom) { //经度转切片坐标x函数
 			return (Math.floor((lon + 180) / 360 * Math.pow(2, zoom)));
@@ -1101,11 +1115,15 @@ Map主函数的原型方法-切片z/x/y转bbox（1,2,3,4）边框经纬度
 		var eventY=0;
 
 		// URL - 对应服务器
-		var url1="http://10.108.21.81/geoserver/";	
+		var url1 ="http://166.111.68.197:11193/geoserver/";
+		//var url1="http://10.108.21.81/geoserver/"
 		var url2 ="http://otile2.mqcdn.com/tiles/1.0.0/osm/";
+		var url3 ="http://192.168.1.9:23021/" 
+
 
 		var store = new Array;
-
+			//检测是否联网
+/*
 		var img16 = new Image();
 		img16.onload = function(){
 			flag=0;
@@ -1116,7 +1134,7 @@ Map主函数的原型方法-切片z/x/y转bbox（1,2,3,4）边框经纬度
 			//alert("flag="+flag);
 		}
 		img16.src=url1+'i/'+zoom+'/'+x+'/'+y;
-
+*/
 		//地图对象初始化
 		var map = new Map(document.getElementById("map"),zoom,x,y);
 		

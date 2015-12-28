@@ -159,28 +159,28 @@ function highwayCss(type,tags,zoom) {
             style[3] = style[2] - 1 ;
         }
 
-        if ( zoom ==12 && tags =='primary' || tags =='primary_link') {
+        if ( zoom ==12 && (tags =='primary' || tags =='primary_link')) {
             style[0] =  '#8d4346';
             style[1] =  '#dd9f9f';
             style[2] =  primary_width_z12;
             style[3] = style[2] - 0.5 ;
         }
 
-        if ( (zoom >=13 && zoom <=14) &&  tags =='primary' || tags =='primary_link') {
+        if ( (zoom >=13 && zoom <=14) &&  (tags =='primary' || tags =='primary_link')) {
             style[0] =  '#8d4346';
             style[1] =  '#dd9f9f';
             style[2] =  primary_width_z13;
             style[3] = style[2] - 0.5 ;
         }
 
-        if ( (zoom >=15 && zoom <=16) &&  tags =='primary' || tags =='primary_link') {
+        if ( (zoom >=15 && zoom <=16) && ( tags =='primary' || tags =='primary_link')) {
             style[0] =  '#8d4346';
             style[1] =  '#dd9f9f';
             style[2] =  primary_width_z15;
             style[3] = style[2] - 1 ;
         }
 
-        if ( zoom >=17 &&  tags =='primary' || tags =='primary_link') {
+        if ( zoom >=17 &&  (tags =='primary' || tags =='primary_link')) {
             style[0] =  '#8d4346';
             style[1] =  '#dd9f9f';
             style[2] =  primary_width_z17;
