@@ -12,15 +12,18 @@
 		<button id="zoom-out">zoom out - </button>
 	    <button id="zoom-in">zoom in + </button>
 		<button id="vector map">矢量地图 </button>
-	    <button id="img map">栅格地图 </button>	    
+	    <button id="img map">OSM地图 </button>
+	    <button id="road map">路网地图 </button>	  
 	</div>
 
 	<script src="geojson_html5-master/javascript/storage.js"></script>
 	<script src="geojson_html5-master/javascript/jquery.js"></script>
-	<script src="geojson_html5-master/stylesheets/highway.js"></script>
+	<script src="geojson_html5-master/stylesheets/ways.js"></script>
 	<script src="geojson_html5-master/stylesheets/water.js"></script>
+	<script src="geojson_html5-master/stylesheets/waterway.js"></script>
 	<script src="geojson_html5-master/stylesheets/building.js"></script>
 	<script src="geojson_html5-master/stylesheets/railway.js"></script>
+	<script src="geojson_html5-master/stylesheets/landcover.js"></script>
 	<script>
 	var $ = jQuery; //jquery框架
 /*
@@ -46,13 +49,21 @@ Map主函数
 
 		// 注册事件函数 events
 		var _this = this;
+		document.getElementById('road map').onclick = function() {
+			flag=1;
+			road_flag=1;
+			_this.draw_Image(zoom,x,y);
+
+		}		
 		document.getElementById('img map').onclick = function() {
 			flag=0;
+			road_flag=0;
 			_this.draw_Image(zoom,x,y);
 
 		}
 		document.getElementById('vector map').onclick = function() {
 			flag=1;
+			road_flag=0;
 			_this.draw_Image(zoom,x,y);
 		}
 
@@ -443,7 +454,8 @@ Map主函数的原型方法-渲染GeoJSON数据
 			 	//矢量绘制初始化
 			 	ctx.beginPath();
 
-			 	var hasInRange = false;
+			 	//var hasInRange = false;
+			 	var hasInRange = true;
 			 	$.each(coordinates, function(nindx, node) {
 			 		if ((node[0] >= Math.min(bbox[0], bbox[2]) && node[0] <= Math.max(bbox[0], bbox[2]))&&(node[1] >= Math.min(bbox[1], bbox[3]) && node[1] <= Math.max(bbox[1], bbox[3]))) { hasInRange = true };
 					//判断该点是否在切片范围内
@@ -463,8 +475,12 @@ Map主函数的原型方法-渲染GeoJSON数据
 				 				}
 
 								//ctx.fillText=(obj.properties.name,m,n);
+
 							}
-						else {ctx.lineTo(x_, y_);} //canvas函数-绘制线条
+						else {
+							ctx.lineTo(x_, y_);
+
+						} //canvas函数-绘制线条
 					}
 			 		
 					//ctx.fillText(way_name[num],m[num],n[num]); 
@@ -473,24 +489,30 @@ Map主函数的原型方法-渲染GeoJSON数据
 
 			 	if (!hasInRange) { return; };
 
-			 	if(zoom>=12 && (obj.properties.highway != undefined && obj.properties.highway != null)) {
-			 		//根据道路渲染规则"stylesheets/highway.js" 初始化道路对象
-			 		var roads = new highwayCss('highway',obj.properties.highway,zoom);
+			 	if(zoom>=5 && (obj.properties.highway != undefined && obj.properties.highway != null)) {
+			 		//根据道路渲染规则"stylesheets/ways.js" 初始化道路对象
+			 		var roads = new waysCss('highway',obj.properties,zoom);
+
 
 			 		ctx.lineJoin="round";
 					ctx.strokeStyle = roads[0]; //线条颜色
 					ctx.lineWidth = roads[2];   //线条宽度
 					//ctx.strokeDasharray = 5,10;
 					ctx.stroke();               //绘制线条1（道路外围线）
-
+				
 					ctx.lineJoin="round";
 					ctx.strokeStyle = roads[1]; //线条颜色
 					ctx.lineWidth = roads[3];   //线条宽度
 					ctx.stroke();               //绘制线条2 （道路主线-内）
-			 		
+/*
+					ctx.lineJoin="round";
+					ctx.strokeStyle = '#777'; //线条颜色
+					ctx.lineWidth = 1;   //线条宽度
+					ctx.stroke();               //绘制线条2 （道路主线-内）
+*/			 		
 				};//if type==way end
-			 	
-			 	if(zoom<12) {
+		 	
+			 	if(zoom<5) {
 			 		//根据道路渲染规则"stylesheets/highway.js" 初始化道路对象
 			 		if(obj.properties.highway =='motorway' || obj.properties.highway =='motorway_link'){
 			 			ctx.lineJoin="round";
@@ -529,37 +551,200 @@ Map主函数的原型方法-渲染GeoJSON数据
 			 		
 			 		
 				};//if type==way end
-	            //building water area
-	            
+
+/*	            
+	            if(obj.properties.railway != null) {
+			 		//根据道路渲染规则"stylesheets/ways.js" 初始化道路对象
+			 		var railway = new waysCss('railway',obj.properties,zoom);			 		
+
+					ctx.strokeStyle = railway[0];
+	            	ctx.lineWidth = railway[2];
+	            	ctx.lineJoin="round";
+	            	ctx.strokeDasharray = 8,8;
+	            	ctx.stroke();
+
+			 	}
+
+	            if(obj.properties.aeroway != null) {
+			 		//根据道路渲染规则"stylesheets/ways.js" 初始化道路对象
+			 		var roads = new waysCss('aeroway',obj.properties,zoom);
+
+			 		ctx.lineJoin="round";
+					ctx.strokeStyle = roads[0]; //线条颜色
+					ctx.lineWidth = roads[2];   //线条宽度
+					//ctx.strokeDasharray = 5,10;
+					ctx.stroke();  
+
+			 	}			 	
+*/
+if(road_flag==0){
+           //building water area
 	            if(obj.properties["building"] != null) {
 	            	//根据建筑渲染规则"stylesheets/building.js" 初始化建筑对象
 	            	var building = new buildingCss('building',obj.properties.building,zoom);
+					if(obj.geometry.type=='Polygon' || obj.geometry.type == 'MultiPolygon'){
+					    ctx.fillStyle = building[1]; 
+					    ctx.fill();
+					}            	
 	            	ctx.strokeStyle = building[0];
-	            	ctx.fillStyle = building[1];
 	            	ctx.lineWidth = building[2];
-	            	ctx.fill();
 	            	ctx.stroke();
 	            }
+	       	//type_11 :  'leisure' 'wetland' 'tourism' 'landuse' 'amenity' 'military' 'natural' 'power' 'aeroway'=='apron'||'aerodrome' 'highway'=='services'||'rest_area' 'railway'=='station'     
+	            if(obj.properties.railway == 'station') {
+	            	//根据水域渲染规则"stylesheets/landcover.js" 初始化水域对象
+	            	var landcover = new landcoverCss('railway',obj.properties,zoom);
+	            	if(obj.geometry.type=='Polygon' || obj.geometry.type == 'MultiPolygon'){
+					    ctx.fillStyle = landcover[1];
+					    ctx.globalAlpha = 0.9; 
+	            		ctx.fill();
+					}	
+	            	//if(zoom>=12){
+		            //	ctx.strokeStyle = landcover[0];
+		            //	ctx.lineWidth = landcover[2];
+		            // 	ctx.stroke();
+	            	//}
+	            }	            
+	            if(obj.properties.highway == 'services' || obj.properties.highway == 'rest_area') {
+	            	//根据水域渲染规则"stylesheets/landcover.js" 初始化水域对象
+	            	var landcover = new landcoverCss('highway',obj.properties,zoom);
+	            	if(obj.geometry.type=='Polygon' || obj.geometry.type == 'MultiPolygon'){
+					    ctx.fillStyle = landcover[1];
+					    ctx.globalAlpha = 0.9; 
+	            		ctx.fill();
+					}	
+	            }
+	            if(obj.properties.aeroway == 'apron' || obj.properties.aeroway == 'aerodrome') {
+	            	//根据水域渲染规则"stylesheets/landcover.js" 初始化水域对象
+	            	var landcover = new landcoverCss('aeroway',obj.properties,zoom);
+	            	if(obj.geometry.type=='Polygon' || obj.geometry.type == 'MultiPolygon'){
+					    ctx.fillStyle = landcover[1];
+					    ctx.globalAlpha = 0.9; 
+	            		ctx.fill();
+					}	
+	            }
+	            if(obj.properties.power!= null) {
+	            	//根据水域渲染规则"stylesheets/landcover.js" 初始化水域对象
+	            	var landcover = new landcoverCss('power',obj.properties,zoom);
+	            	if(obj.geometry.type=='Polygon' || obj.geometry.type == 'MultiPolygon'){
+					    ctx.fillStyle = landcover[1];
+					    ctx.globalAlpha = 0.9; 
+	            		ctx.fill();
+					}	
+	            }
+	            if(obj.properties.natural!= null) {
+	            	//根据水域渲染规则"stylesheets/landcover.js" 初始化水域对象
+	            	var landcover = new landcoverCss('natural',obj.properties,zoom);
+	            	if(obj.geometry.type=='Polygon' || obj.geometry.type == 'MultiPolygon'){
+					    ctx.fillStyle = landcover[1];
+					    ctx.globalAlpha = 0.9; 
+	            		ctx.fill();
+					}	
+	            }
+	            if(obj.properties.military != null) {
+	            	//根据水域渲染规则"stylesheets/landcover.js" 初始化水域对象
+	            	var landcover = new landcoverCss('military',obj.properties,zoom);
+	            	if(obj.geometry.type=='Polygon' || obj.geometry.type == 'MultiPolygon'){
+					    ctx.fillStyle = landcover[1];
+					    ctx.globalAlpha = 0.9; 
+	            		ctx.fill();
+					}	
+	            }
 
-	            if(obj.properties.water != null) {
+	            if(obj.properties.amenity != null) {
+	            	//根据水域渲染规则"stylesheets/landcover.js" 初始化水域对象
+	            	var landcover = new landcoverCss('amenity',obj.properties,zoom);
+	            	if(obj.geometry.type=='Polygon' || obj.geometry.type == 'MultiPolygon'){
+					    ctx.fillStyle = landcover[1];
+					    ctx.globalAlpha = 0.9; 
+	            		ctx.fill();
+					}	
+	            }
+
+	            if(obj.properties.landuse != null) {
+	            	//根据水域渲染规则"stylesheets/landcover.js" 初始化水域对象
+	            	var landcover = new landcoverCss('landuse',obj.properties,zoom);
+	            	if(obj.geometry.type=='Polygon' || obj.geometry.type == 'MultiPolygon'){
+					    ctx.fillStyle = landcover[1];
+					    ctx.globalAlpha = 0.9; 
+	            		ctx.fill();
+					}	
+	            }
+	            if(obj.properties.tourism != null) {
+	            	//根据水域渲染规则"stylesheets/landcover.js" 初始化水域对象
+	            	var landcover = new landcoverCss('tourism',obj.properties,zoom);
+	            	if(obj.geometry.type=='Polygon' || obj.geometry.type == 'MultiPolygon'){
+					    ctx.fillStyle = landcover[1];
+					    ctx.globalAlpha = 0.9; 
+	            		ctx.fill();
+					}	
+	            }
+	            if(obj.properties.wetland != null) {
+	            	//根据水域渲染规则"stylesheets/landcover.js" 初始化水域对象
+	            	var landcover = new landcoverCss('wetland',obj.properties,zoom);
+	            	if(obj.geometry.type=='Polygon' || obj.geometry.type == 'MultiPolygon'){
+					    ctx.fillStyle = landcover[1];
+					    ctx.globalAlpha = 0.9; 
+	            		ctx.fill();
+					}	
+	            }
+	            if(obj.properties.leisure != null) {
+	            	//根据水域渲染规则"stylesheets/landcover.js" 初始化水域对象
+	            	var landcover = new landcoverCss('leisure',obj.properties,zoom);
+	            	if(obj.geometry.type=='Polygon' || obj.geometry.type == 'MultiPolygon'){
+					    ctx.fillStyle = landcover[1];
+					    ctx.globalAlpha = 0.9; 
+	            		ctx.fill();
+					}	
+	            }
+
+
+
+	            if(obj.properties.natural != null ) {
 	            	//根据水域渲染规则"stylesheets/water.js" 初始化水域对象
-	            	var water = new waterCss('water',obj.properties,zoom);
-	            	ctx.fillStyle = water[1];
-	            	ctx.strokeStyle = water[1];
-	            	ctx.globalAlpha = 0.7; 
-	            	//ctx.fill();
-	            	ctx.stroke();
+	            	//type == 'natural' || type == 'waterway' || type == 'landuse'
+	            	var water = new waterCss('natural',obj.properties,zoom);
+	            	if(obj.geometry.type=='Polygon' || obj.geometry.type == 'MultiPolygon'){
+		            	ctx.fillStyle = water[1];
+		            	ctx.globalAlpha = 0.9; 
+		            	ctx.fill();
+					}
+
 	            }
 
-	            if(obj.properties.waterway === 'river'){
+	            if(obj.properties.landuse != null) {           	
+	            	
+	            	var water = new waterCss('landuse',obj.properties,zoom);
+	            	if(obj.geometry.type=='Polygon' || obj.geometry.type == 'MultiPolygon'){
+		            	ctx.fillStyle = water[1];
+		            	ctx.globalAlpha = 0.9; 
+		            	ctx.fill();	
+					}	            	
+
+	            }
+
+	            if(obj.properties.waterway != null && (obj.geometry.type=='Polygon' || obj.geometry.type == 'MultiPolygon')) {
+
+	            	var water = new waterCss('waterway',obj.properties,zoom);
+	            	if(obj.geometry.type=='Polygon' || obj.geometry.type == 'MultiPolygon'){
+		            	ctx.fillStyle = water[1];
+		            	ctx.globalAlpha = 0.9; 
+		            	ctx.fill();	
+					}
+	 
+	            }
+
+
+
+	            if(obj.properties.waterway !=null && obj.geometry.type!='Polygon' && obj.geometry.type != 'MultiPolygon'){
 	            	//根据河流渲染规则"stylesheets/waterway.js" 初始化河流对象
-	            	var waterway = new waterCss('waterway',obj.properties,zoom);
+	            	var waterway = new waterlineCss('waterway',obj.properties,zoom);
 	            	ctx.strokeStyle = waterway[0];
 	            	ctx.lineWidth = waterway[2];
 	            	ctx.stroke();
 	            }
-
-	            if(obj.properties.railway === 'subway'){
+/*	    
+	            if(obj.properties.railway !=null){
 	            	//根据水域渲染规则"stylesheets/subway.js" 初始化地铁对象
 	            	var railway = new railwayCss('subway',obj.properties,zoom);
 	            	if(railway[6]==0) //非虚线
@@ -585,9 +770,12 @@ Map主函数的原型方法-渲染GeoJSON数据
 	            	
 	            }
 
-	            ctx.fillStyle = 'black';
-						//ctx.fillText(num,m[num-1],n[num-1]);
-				}); // .each(this.data.features, function(indx, way)
+*/
+	            //ctx.fillStyle = 'black';
+				//ctx.fillText(num,m[num-1],n[num-1]);
+
+	}//road_flag==0;
+	}); // .each(this.data.features, function(indx, way)
 
 			
 			/*
@@ -1095,7 +1283,7 @@ Map主函数的原型方法-切片z/x/y转bbox（1,2,3,4）边框经纬度
 		//中心点的经纬度坐标及缩放等级
 		var lon = 116.3912;    //经度116.4161
 		var lat = 39.9059; //纬度39.9165
-		var zoom = 15;               //缩放等级
+		var zoom = 14;               //缩放等级
 		
 		function lon2tile(lon,zoom) { //经度转切片坐标x函数
 			return (Math.floor((lon + 180) / 360 * Math.pow(2, zoom)));
@@ -1108,6 +1296,7 @@ Map主函数的原型方法-切片z/x/y转bbox（1,2,3,4）边框经纬度
 		var y = lat2tile(lat,zoom); //中心切片的y值
 
 		var flag =1;  //地图数据源的信号函数 初始化为0；
+		var road_flag=0;
 		var changeCenter=1; //中心位置切片修正触发信号
 	 
 		//鼠标事件位移量初始化
