@@ -79,6 +79,7 @@ Map主函数
 			x=2*x;
 			y=2*y;
 			changeCenter=1;
+			roadConditionStorageFlag=0;
 			_this.draw_Image(zoom,x,y);
 		};
 
@@ -87,6 +88,7 @@ Map主函数
 			x=Math.round(x/2);
 			y=Math.round(y/2);
 			changeCenter=1;
+			roadConditionStorageFlag=0;
 			_this.draw_Image(zoom,x,y);
 		};
 
@@ -105,6 +107,7 @@ Map主函数
 				x=2*x;
 				y=2*y;
 				changeCenter=1;
+				roadConditionStorageFlag=0;
 				_this.draw_Image(zoom,x,y); //地图切片渲染函数
 			}
 			if(event.originalEvent.deltaY<0){ //向下滚动-缩小一个等级
@@ -112,6 +115,7 @@ Map主函数
 				x=Math.round(x/2);
 				y=Math.round(y/2);
 				changeCenter=1;
+				roadConditionStorageFlag=0;
 				_this.draw_Image(zoom,x,y); //地图切片渲染函数
 			}
 		});
@@ -882,7 +886,7 @@ if(road_flag==0){
 						ctx.strokeStyle = '#7FFF00'; //线条颜色 顺畅
 					}					
 					
-					ctx.lineWidth = roads[3];   //线条宽度
+					ctx.lineWidth = roads[3]+1.2;   //线条宽度
 					ctx.stroke();               //绘制线条2 （道路主线-内）
 			 		
 				};//if type==way end
@@ -917,8 +921,10 @@ if(road_flag==0){
 
 
 			}; 
-			//console.log(way_name);	
+			console.log(way_name);	
 			ctx.fillStyle = '#FFDAB9';
+			way_name=[];
+			num=0;
 
 		}
 /*
@@ -1340,7 +1346,7 @@ Map主函数的原型方法-地图混合渲染函数
 //路况切片的加载和缓存
 				if(flag==1 && roadCondition_flag==1){
 
-					if(right==0&&left==0&&up==0&&down==0){
+					if(right==0&&left==0&&up==0&&down==0&&roadConditionStorageFlag==0){
 						for(var i=0;i<49;i++){
 							roadTile[i]=url1+'t/'+pngTile[i]+'/10';
 							var str='roadCondition['+i+']';
@@ -1354,7 +1360,8 @@ Map主函数的原型方法-地图混合渲染函数
 									$(_this).trigger('data_updated');
 								}	
 							});
-						}												
+						}
+						roadConditionStorageFlag=1;												
 					}
 
 					if(right==0&&left==1&&up==1&&down==0){//向左上拖动
@@ -1731,7 +1738,7 @@ Map主函数的原型方法-切片z/x/y转bbox（1,2,3,4）边框经纬度
 		//中心点的经纬度坐标及缩放等级
 		var lon = 116.3912;    //经度116.4161
 		var lat = 39.9059; //纬度39.9165
-		var zoom = 14;               //缩放等级
+		var zoom = 15;               //缩放等级
 		
 		function lon2tile(lon,zoom) { //经度转切片坐标x函数
 			return (Math.floor((lon + 180) / 360 * Math.pow(2, zoom)));
@@ -1764,6 +1771,7 @@ Map主函数的原型方法-切片z/x/y转bbox（1,2,3,4）边框经纬度
 
 
 		var roadCondition = new Array();
+		var roadConditionStorageFlag=0;
 			//检测是否联网
 /*
 		var img16 = new Image();
