@@ -4,8 +4,11 @@ function waysCss(type,tags,zoom) {
            // style[1] = '#ddd';//fill-color
            // style[2] = 2;//stroke-width
            // style[3] = 0;//fill-width
-           // style[4] = "round";;//lineCap
-           // style[5] = "round";;//lineJoin          
+           // style[4] = "round";//lineCap
+           // style[5] = "round";//lineJoin  
+           // style[6] = "text-size";
+           // style[7] = "text-fill: black";  
+           // style[8] = "text_halo_fill";     
 
     var motorway_fill = '#e892a2';  // Lch(70 // darken35 // darken10) // darken error 0.5
     var trunk_fill = '#f9b29c';  // Lch(79 // darken33 // darken42) // darken error 0.7
@@ -952,6 +955,121 @@ if(type == 'highway'){
     }
 */  
 
+
+  if(tags['highway'] == 'motorway' || tags['highway'] == 'trunk' || tags['highway'] == 'primary') {
+    if(zoom >= 13) {
+      style[6] = 8;
+      style[7] = 'black';
+      if(tags['tunnel'] =='no') {
+        if(tags['highway'] == 'motorway') { style[8] = motorway_fill; }
+        if(tags['highway'] == 'trunk') { style[8] = trunk_fill; }
+        if(tags['highway'] == 'primary') { style[8] = primary_fill; }
+      }
+    }
+    if(zoom >= 14) {
+      style[6] = 9;
+    }
+    if(zoom >= 15) {
+      style[6] = 10;
+    }
+    if(zoom >= 17) {
+      style[6] = 11;
+    }
+    if(zoom >= 19) {
+      style[6] = 12;
+    }
+  }
+  if(tags['highway'] == 'secondary') {
+    if(zoom >= 13) {
+      style[6] = 8;
+      style[7] = 'black';
+      style[8] = secondary_fill;
+    }
+    if(zoom >= 14) {
+      style[6] = 9;
+    }
+    if(zoom >= 15) {
+      style[6] = 10;
+    }
+    if(zoom >= 17) {
+      style[6] = 11;
+    }
+    if(zoom >= 19) {
+      style[6] = 12;
+    }
+  }
+  if(tags['highway'] == 'tertiary' || tags['highway'] == 'tertiary_link') {
+    if(zoom >= 14) {
+      style[6] = 9;
+      style[7] = 'black';
+      style[8] = tertiary_fill;
+    }
+    if(zoom >= 17) {
+      style[6] = 11;
+    }
+    if(zoom >= 19) {
+      style[6] = 12;
+    }
+  }
+  if(tags['highway'] == 'construction') {
+  if(zoom >= 14) {
+      style[6] = 9;
+      style[7] = 'black';
+      style[8] = rgba(255,255,255,0.6);
+      if(zoom >= 17) {
+        style[6] = 11;
+      }
+      if(zoom >= 19) {
+        style[6] = 12;
+      }
+    }
+  }
+  if(tags['highway'] == 'residential' || tags['highway'] == 'unclassified' || tags['highway'] == 'road') {
+    if(zoom >= 15) {
+      style[6] = 8;
+      style[7] = 'black';
+      style[8] = residential_fill;
+    }
+    if(zoom >= 16) {
+      style[6] = 9;
+    }
+    if(zoom >= 17) {
+      style[6] = 11;
+    }
+    if(zoom >= 19) {
+      style[6] = 12;
+    }
+  }
+
+  if(tags['highway'] == 'raceway' || tags['highway'] == 'service') {
+    if(zoom >= 16) {
+      style[6] = 9;
+      style[7] = 'black';
+      if(tags['highway'] == 'raceway') { style[8] = raceway_fill; }
+      if(tags['highway'] == 'service') { style[8] = service_fill; }
+    }
+    if(zoom >= 17) {
+      style[6] = 11;
+    }
+  }
+
+  if(tags['highway'] == 'living_street' || tags['highway'] == 'pedestrian') {
+    if(zoom >= 15) {
+      style[6] = 8;
+      style[7] = 'black';
+      if(tags['highway'] == 'living_street') { style[8] = living_street_fill; }
+      if(tags['highway'] == 'pedestrian') { style[8] = pedestrian_fill; }
+    }
+    if(zoom >= 16) {
+      style[6] = 9;
+    }
+    if(zoom >= 17) {
+      style[6] = 11;
+    }
+    if(zoom >= 19) {
+      style[6] = 12;
+    }
+  }
 }
 if(type == 'railway'){
            // style[0] = 'transparent';//stroke_color

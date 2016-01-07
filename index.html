@@ -13,7 +13,7 @@
 	    <button id="zoom-in">zoom in + </button>
 		<button id="vector map">矢量地图 </button>
 	    <button id="img map">OSM地图 </button>
-	    <button id="road map">路网地图 </button>	  
+	    <button id="road map">路况地图 </button>	  
 	</div>
 
 	<script src="geojson_html5-master/javascript/storage.js"></script>
@@ -52,18 +52,24 @@ Map主函数
 		document.getElementById('road map').onclick = function() {
 			flag=1;
 			road_flag=1;
+			roadCondition_flag=1;
+			if(countFlag==0) changeCenter=1;
+			countFlag++;
 			_this.draw_Image(zoom,x,y);
 
 		}		
 		document.getElementById('img map').onclick = function() {
 			flag=0;
 			road_flag=0;
+			roadCondition_flag=0;
 			_this.draw_Image(zoom,x,y);
 
 		}
 		document.getElementById('vector map').onclick = function() {
 			flag=1;
 			road_flag=0;
+			roadCondition_flag=0;
+			countFlag=0;
 			_this.draw_Image(zoom,x,y);
 		}
 
@@ -407,17 +413,7 @@ Map主函数的原型方法-渲染GeoJSON数据
 			var xmult = this.scale / (bbox[2] - bbox[0]);
 			var ymult = this.scale / (bbox[3] - bbox[1]);
 
-			var m = new Array; //道路填充位置x
-			var n = new Array; //道路填充位置y
-			var way_name = new Array; //道路名字 数组
-			/*
-			后期可以帮道路名字栅格化，进行图层叠加
-			道路名字栅格化填充函数
-			...add
 
-			*/
-
-			var num = 0; //道路名字出行次数
 			
 			//geojson数据对象格式（'LineString'、'MultiLineString'、'Polygon'、'MultiPolygon'）-对应格式： 一维数组 二维数组
 			var coordinates = new Array; 
@@ -437,6 +433,18 @@ Map主函数的原型方法-渲染GeoJSON数据
 			bbox[2]= tile2lon(zoom, x+1);
 			bbox[1]= tile2lat(zoom, y+1);
 
+			var m = new Array; //道路填充位置x
+			var n = new Array; //道路填充位置y
+			var way_name = new Array; //道路名字 数组
+
+			/*
+			后期可以帮道路名字栅格化，进行图层叠加
+			道路名字栅格化填充函数
+			...add
+
+			*/
+
+			var num = 0; //道路名字出行次数
 			//geojson数据对象格式（'LineString'、'MultiLineString'、'Polygon'、'MultiPolygon'）-对应格式： 一维数组 二维数组			
 			 $.each(store[TileNum].get('features'), function(indx, obj) { 
 			 //解析json对象的jquery each()方法
@@ -450,14 +458,18 @@ Map主函数的原型方法-渲染GeoJSON数据
 			 	if (obj.geometry.type == 'MultiPolygon' ){
 			 		coordinates=obj.geometry.coordinates[0][0];
 			 	}
+			 	//var nameX;
+			 	//var nameY;
+
 
 			 	//矢量绘制初始化
 			 	ctx.beginPath();
 
 			 	//var hasInRange = false;
 			 	var hasInRange = true;
+			 	var RoadInRange = false;
 			 	$.each(coordinates, function(nindx, node) {
-			 		if ((node[0] >= Math.min(bbox[0], bbox[2]) && node[0] <= Math.max(bbox[0], bbox[2]))&&(node[1] >= Math.min(bbox[1], bbox[3]) && node[1] <= Math.max(bbox[1], bbox[3]))) { hasInRange = true };
+			 		if ((node[0] >= Math.min(bbox[0], bbox[2]) && node[0] <= Math.max(bbox[0], bbox[2]))&&(node[1] >= Math.min(bbox[1], bbox[3]) && node[1] <= Math.max(bbox[1], bbox[3]))) { RoadInRange = true };
 					//判断该点是否在切片范围内
 
 					if(hasInRange) { //如果该点在切片范围内
@@ -467,18 +479,32 @@ Map主函数的原型方法-渲染GeoJSON数据
 				 		if (nindx === 0) { //矢量对象的起点
 				 			ctx.moveTo(x_, y_); //canvas函数 绘制线条
 				 			//if(obj.properties.name != undefined) {  //全部对象的名字
-				 			if(obj.properties.name != undefined && obj.properties.highway != undefined && obj.properties.highway != null){ 
-				 					m[num]=x_;
-				 					n[num]=y_;
-				 					way_name[num]=obj.properties.name; //道路名字
-				 					num += 1;
-				 				}
-
+/*
+				 			
+*/
 								//ctx.fillText=(obj.properties.name,m,n);
 
 							}
 						else {
 							ctx.lineTo(x_, y_);
+
+							if(nindx==7){
+								//nameX=x_;
+								//nameY=y_;	
+								if(obj.properties.name != undefined && obj.properties.highway != undefined && obj.properties.highway != null){ 
+				 				  	if(((obj.properties.highway == 'motorway' || obj.properties.highway == 'trunk' || obj.properties.highway == 'primary' || obj.properties.highway == 'secondary') && zoom>=13) || ((obj.properties.highway == 'tertiary' || obj.properties.highway == 'tertiary_link' || obj.properties.highway == 'construction') && zoom>=14 ) || ((obj.properties.highway == 'residential' || obj.properties.highway == 'unclassified' || obj.properties.highway == 'road') && zoom >= 15) || ((obj.properties.highway == 'raceway' || obj.properties.highway == 'service') && zoom >= 16) || ((obj.properties.highway == 'living_street' || obj.properties.highway == 'pedestrian') && zoom >= 15) ){
+				 				  		if(RoadInRange){
+					 				  		m[num]=x_;
+						 					n[num]=y_;
+						 					way_name[num]=obj.properties.name; //道路名字
+						 					num += 1;
+					 				  	}
+				 				  	
+				 				  }
+				 					
+				 				}								
+							}
+							
 
 						} //canvas函数-绘制线条
 					}
@@ -489,68 +515,7 @@ Map主函数的原型方法-渲染GeoJSON数据
 
 			 	if (!hasInRange) { return; };
 
-			 	if(zoom>=5 && (obj.properties.highway != undefined && obj.properties.highway != null)) {
-			 		//根据道路渲染规则"stylesheets/ways.js" 初始化道路对象
-			 		var roads = new waysCss('highway',obj.properties,zoom);
 
-
-			 		ctx.lineJoin="round";
-					ctx.strokeStyle = roads[0]; //线条颜色
-					ctx.lineWidth = roads[2];   //线条宽度
-					//ctx.strokeDasharray = 5,10;
-					ctx.stroke();               //绘制线条1（道路外围线）
-				
-					ctx.lineJoin="round";
-					ctx.strokeStyle = roads[1]; //线条颜色
-					ctx.lineWidth = roads[3];   //线条宽度
-					ctx.stroke();               //绘制线条2 （道路主线-内）
-/*
-					ctx.lineJoin="round";
-					ctx.strokeStyle = '#777'; //线条颜色
-					ctx.lineWidth = 1;   //线条宽度
-					ctx.stroke();               //绘制线条2 （道路主线-内）
-*/			 		
-				};//if type==way end
-		 	
-			 	if(zoom<5) {
-			 		//根据道路渲染规则"stylesheets/highway.js" 初始化道路对象
-			 		if(obj.properties.highway =='motorway' || obj.properties.highway =='motorway_link'){
-			 			ctx.lineJoin="round";
-						ctx.strokeStyle = '#506077'; //线条颜色
-						ctx.lineWidth = 3.5;   //线条宽度
-						//ctx.strokeDasharray = 5,10;
-						ctx.stroke();               //绘制线条1（道路外围线）
-
-						ctx.lineJoin="round";
-						ctx.strokeStyle = '#89a4cb'; //线条颜色
-						ctx.lineWidth = 2.5;   //线条宽度
-						ctx.stroke();               //绘制线条2 （道路主线-内）
-			 		}
-
-			 		if(obj.properties.highway =='trunk'){
-			 			ctx.lineJoin="round";
-						ctx.strokeStyle = '#477147'; //线条颜色
-						ctx.lineWidth = 3.5;   //线条宽度
-						//ctx.strokeDasharray = 5,10;
-						ctx.stroke();               //绘制线条1（道路外围线）
-
-						ctx.lineJoin="round";
-						ctx.strokeStyle = '#94d494'; //线条颜色
-						ctx.lineWidth = 3;   //线条宽度
-						ctx.stroke();               //绘制线条2 （道路主线-内）
-			 		}
-
-			 			if(obj.properties.highway =='tertiary'){
-			 			ctx.lineJoin="round";
-						ctx.strokeStyle = '#ddd'; //线条颜色
-						ctx.lineWidth = 1.5;   //线条宽度
-						//ctx.strokeDasharray = 5,10;
-						ctx.stroke();               //绘制线条1（道路外围线）
-
-			 		}
-			 		
-			 		
-				};//if type==way end
 
 /*	            
 	            if(obj.properties.railway != null) {
@@ -775,7 +740,157 @@ if(road_flag==0){
 				//ctx.fillText(num,m[num-1],n[num-1]);
 
 	}//road_flag==0;
+
+			 	if(zoom>=5 && (obj.properties.highway != undefined && obj.properties.highway != null)) {
+			 		//根据道路渲染规则"stylesheets/ways.js" 初始化道路对象
+			 		var roads = new waysCss('highway',obj.properties,zoom);
+
+
+			 		ctx.lineJoin="round";
+					ctx.strokeStyle = roads[0]; //线条颜色
+					ctx.lineWidth = roads[2];   //线条宽度
+					//ctx.strokeDasharray = 5,10;
+					ctx.stroke();               //绘制线条1（道路外围线）
+				
+					ctx.lineJoin="round";
+					ctx.strokeStyle = roads[1]; //线条颜色
+					ctx.lineWidth = roads[3];   //线条宽度
+					ctx.stroke();               //绘制线条2 （道路主线-内）
+/*
+					ctx.lineJoin="round";
+					ctx.strokeStyle = '#777'; //线条颜色
+					ctx.lineWidth = 1;   //线条宽度
+					ctx.stroke();               //绘制线条2 （道路主线-内）
+
+*/
+/*		if(obj.properties.name != undefined && obj.properties.highway != undefined && obj.properties.highway != null){ 
+			if(((obj.properties.highway == 'motorway' || obj.properties.highway == 'trunk' || obj.properties.highway == 'primary' || obj.properties.highway == 'secondary') && zoom >= 13) || ((obj.properties.highway == 'tertiary' || obj.properties.highway == 'tertiary_link' || obj.properties.highway == 'construction') && zoom>=14 ) || ((obj.properties.highway == 'residential' || obj.properties.highway == 'unclassified' || obj.properties.highway == 'road') && zoom >= 15) || ((obj.properties.highway == 'raceway' || obj.properties.highway == 'service') && zoom >= 16) || ((obj.properties.highway == 'living_street' || obj.properties.highway == 'pedestrian') && zoom >= 15) ){
+				if(RoadInRange){
+					ctx.font=roads[6]+"px Arial";
+					ctx.textBaseline="middle";
+					ctx.textAlign = "center";
+					ctx.fillStyle = roads[7];
+					ctx.fillText(obj.properties.name,nameX,nameY);
+					ctx.fillStyle = '#FFDAB9';
+				}
+			}
+		}
+		*/
+				};//if type==way end
+		 	
+			 	if(zoom<5) {
+			 		//根据道路渲染规则"stylesheets/highway.js" 初始化道路对象
+			 		if(obj.properties.highway =='motorway' || obj.properties.highway =='motorway_link'){
+			 			ctx.lineJoin="round";
+						ctx.strokeStyle = '#506077'; //线条颜色
+						ctx.lineWidth = 3.5;   //线条宽度
+						//ctx.strokeDasharray = 5,10;
+						ctx.stroke();               //绘制线条1（道路外围线）
+
+						ctx.lineJoin="round";
+						ctx.strokeStyle = '#89a4cb'; //线条颜色
+						ctx.lineWidth = 2.5;   //线条宽度
+						ctx.stroke();               //绘制线条2 （道路主线-内）
+			 		}
+
+			 		if(obj.properties.highway =='trunk'){
+			 			ctx.lineJoin="round";
+						ctx.strokeStyle = '#477147'; //线条颜色
+						ctx.lineWidth = 3.5;   //线条宽度
+						//ctx.strokeDasharray = 5,10;
+						ctx.stroke();               //绘制线条1（道路外围线）
+
+						ctx.lineJoin="round";
+						ctx.strokeStyle = '#94d494'; //线条颜色
+						ctx.lineWidth = 3;   //线条宽度
+						ctx.stroke();               //绘制线条2 （道路主线-内）
+			 		}
+
+			 			if(obj.properties.highway =='tertiary'){
+			 			ctx.lineJoin="round";
+						ctx.strokeStyle = '#ddd'; //线条颜色
+						ctx.lineWidth = 1.5;   //线条宽度
+						//ctx.strokeDasharray = 5,10;
+						ctx.stroke();               //绘制线条1（道路外围线）
+
+			 		}
+			 		
+			 		
+				};//if type==way end
 	}); // .each(this.data.features, function(indx, way)
+
+		if(roadCondition_flag==1 && road_flag==1)
+		{
+			 $.each(roadCondition[TileNum].get('features'), function(indx, obj) { 
+			 //解析json对象的jquery each()方法
+
+			 	if (obj.geometry.type == 'LineString' ){
+			 		coordinates=obj.geometry.coordinates;
+			 	}
+			 	if (obj.geometry.type == 'MultiLineString' || obj.geometry.type == 'Polygon' ){
+			 		coordinates=obj.geometry.coordinates[0];
+			 	}
+			 	if (obj.geometry.type == 'MultiPolygon' ){
+			 		coordinates=obj.geometry.coordinates[0][0];
+			 	}
+
+			 	//矢量绘制初始化
+			 	ctx.beginPath();
+
+			 	var hasInRange = true;
+			 	$.each(coordinates, function(nindx, node) {
+
+					if(hasInRange) { //如果该点在切片范围内
+						var x_ = (node[0] - bbox[0]) * xmult + moveX; //投影至画布上的x轴坐标
+				 		var y_ = (bbox[3] - node[1]) * ymult + moveY; //投影至画布上的y轴坐标
+
+				 		if (nindx === 0) { //矢量对象的起点
+				 			ctx.moveTo(x_, y_); //canvas函数 绘制线条
+				 		}
+						else ctx.lineTo(x_, y_);
+
+						 //canvas函数-绘制线条
+					}
+
+				});
+
+			 	if(zoom>=5 && (obj.properties.highway != undefined && obj.properties.highway != null)) {
+			 		//根据道路渲染规则"stylesheets/ways.js" 初始化道路对象
+			 		var roads = new waysCss('highway',obj.properties,zoom);
+
+			 		ctx.lineJoin="round";
+					ctx.strokeStyle = roads[0]; //线条颜色
+					ctx.lineWidth = roads[2];   //线条宽度
+					//ctx.strokeDasharray = 5,10;
+					ctx.stroke();               //绘制线条1（道路外围线）
+				
+					ctx.lineJoin="round";
+					ctx.globalAlpha = 0.7; 
+					if(obj.properties.average_speed<5){
+						ctx.strokeStyle = '#EE0000'; //线条颜色 特别堵
+					}
+					if(obj.properties.average_speed>=5 && obj.properties.average_speed<9){
+						ctx.strokeStyle = '#EE3B3B'; //线条颜色 堵
+					}
+					if(obj.properties.average_speed>=9 && obj.properties.average_speed<13){
+						ctx.strokeStyle = '#EEAD0E'; //线条颜色 一般堵
+					}
+					if(obj.properties.average_speed>=13 && obj.properties.average_speed<17){
+						ctx.strokeStyle = '#EEEE00'; //线条颜色 有点堵
+					}
+					if(obj.properties.average_speed>=17){
+						ctx.strokeStyle = '#7FFF00'; //线条颜色 顺畅
+					}					
+					
+					ctx.lineWidth = roads[3];   //线条宽度
+					ctx.stroke();               //绘制线条2 （道路主线-内）
+			 		
+				};//if type==way end
+		 	
+
+			}); // 路况叠加
+
+		}//if(roadCondition_flag==1 && road_flag==1)
 
 			
 			/*
@@ -784,25 +899,27 @@ if(road_flag==0){
 			...add
 
 			*/
-/*			//填充道路名字
+			//填充道路名字
 			for (var i = 0; i < way_name.length; i++) {
-				ctx.strokeStyle = 'black';
-				ctx.fillstyle = 'black';
-				ctx.font="10px Arial";
-				ctx.textBaseline="middle";
-				ctx.textAlign = "center";
-				if(i%3==0) ctx.fillText(way_name[i],m[i],n[i]);
+			
 				//相同路名只显示一次
-				for (var j = i; j <way_name.length; j++) {
-					if(way_name[j]==way_name[j+1]) j++;
-					else{
-						i=j; 
-						i++;
-						break;
-					}
-				};
+				j=i;
+				while(way_name[i]==way_name[j+1] && i<way_name.length){
+					j++;
+				}
+				i=j;
+					ctx.font="10px Arial";
+					ctx.textBaseline="middle";
+					ctx.textAlign = "center";
+					ctx.fillStyle = 'black';
+					ctx.strokeStyle = 'black';
+					ctx.fillText(way_name[i],m[i],n[i]);
+
+
 			}; 
-*/
+			//console.log(way_name);	
+			ctx.fillStyle = '#FFDAB9';
+
 		}
 /*
 Map主函数的原型方法-地图混合渲染函数
@@ -824,6 +941,7 @@ Map主函数的原型方法-地图混合渲染函数
 			var pngTile = new Array();  //图片切片
 			var jsonTile = new Array(); //矢量切片
 			var jsonT = new Array(); //矢量切片
+			var roadTile = new Array(); //路况切片
 			// Create or get an existing store
 
 
@@ -883,6 +1001,30 @@ Map主函数的原型方法-地图混合渲染函数
 				eventX=0;
 				eventY=0;
 				if(flag==1){
+
+					if(right==0&&left==0&&up==0&&down==0&&countFlag!=1){
+						for(var i=0;i<49;i++){
+							jsonTile[i]=url1+'v/'+pngTile[i];
+							var str='store['+i+']';
+							store[i] = Storage(str);
+							//map.load(jsonTile[i]);							
+							$.ajaxSettings.async = false; //ajax同步
+							$.getJSON(jsonTile[i], function(data,textStatus) { //用jquery的getJSON()方法获取GeoJSON数据
+								if(textStatus=="success")
+								{
+									/*
+									if(store[i].name == 'QuotaExceededError'){
+										store[i].clear();
+										store[i].set('features',data.features);
+									}
+									*/
+									store[i].set('features',data.features);
+									$(_this).trigger('data_updated');
+								}	
+							});
+						}												
+					}
+
 					if(right==0&&left==1&&up==1&&down==0){//向左上拖动
 						for(var i=0;i<=4;i++){
 							for(var j=4;j>=0;j--){
@@ -1087,29 +1229,6 @@ Map主函数的原型方法-地图混合渲染函数
 						}											
 					}
 
-					if(right==0&&left==0&&up==0&&down==0){
-						for(var i=0;i<49;i++){
-							jsonTile[i]=url1+'v/'+pngTile[i];
-							var str='store['+i+']';
-							store[i] = Storage(str);
-							//map.load(jsonTile[i]);							
-							$.ajaxSettings.async = false; //ajax同步
-							$.getJSON(jsonTile[i], function(data,textStatus) { //用jquery的getJSON()方法获取GeoJSON数据
-								if(textStatus=="success")
-								{
-									/*
-									if(store[i].name == 'QuotaExceededError'){
-										store[i].clear();
-										store[i].set('features',data.features);
-									}
-									*/
-									store[i].set('features',data.features);
-									$(_this).trigger('data_updated');
-								}	
-							});
-						}												
-					}
-
 					if(right==0&&left==0&&up==0&&down==1){//向下拖动
 						for(var i=0;i<7;i++){
 							for(var j=6;j>=2;j--){
@@ -1217,11 +1336,331 @@ Map主函数的原型方法-地图混合渲染函数
 						}
 					}
 
-
-
-
-
 				}
+//路况切片的加载和缓存
+				if(flag==1 && roadCondition_flag==1){
+
+					if(right==0&&left==0&&up==0&&down==0){
+						for(var i=0;i<49;i++){
+							roadTile[i]=url1+'t/'+pngTile[i]+'/10';
+							var str='roadCondition['+i+']';
+							roadCondition[i] = Storage(str);
+							//map.load(roadTile[i]);							
+							$.ajaxSettings.async = false; //ajax同步
+							$.getJSON(roadTile[i], function(data,textStatus) { //用jquery的getJSON()方法获取GeoJSON数据
+								if(textStatus=="success")
+								{
+									roadCondition[i].set('features',data.features);
+									$(_this).trigger('data_updated');
+								}	
+							});
+						}												
+					}
+
+					if(right==0&&left==1&&up==1&&down==0){//向左上拖动
+						for(var i=0;i<=4;i++){
+							for(var j=4;j>=0;j--){
+								roadCondition[i*7+j]=roadCondition[(i+2)*7+(j+2)];
+							}							
+						}
+						for(var i=35;i<49;i++){
+							roadTile[i]=url1+'t/'+pngTile[i]+'/10';
+							var str='roadCondition['+i+']';
+							roadCondition[i] = Storage(str);
+							//map.load(roadTile[i]);							
+							$.ajaxSettings.async = false; //ajax同步
+							$.getJSON(roadTile[i], function(data,textStatus) { //用jquery的getJSON()方法获取GeoJSON数据
+								if(textStatus=="success")
+								{
+									roadCondition[i].set('features',data.features);
+									$(_this).trigger('data_updated');
+								}	
+							});															
+						}
+						for(var i=0;i<=4;i++){
+							roadTile[i*7+5]=url1+'v/'+pngTile[i*7+5];
+							var str='roadCondition['+(i*7+5)+']';
+							roadCondition[i*7+5] = Storage(str);
+							//map.load(roadTile[i]);							
+							$.ajaxSettings.async = false; //ajax同步
+							$.getJSON(roadTile[i*7+5], function(data,textStatus) { //用jquery的getJSON()方法获取GeoJSON数据
+								if(textStatus=="success")
+								{
+									roadCondition[i*7+5].set('features',data.features);
+									$(_this).trigger('data_updated');
+								}	
+							});															
+						}
+						for(var i=0;i<=4;i++){
+							roadTile[i*7+6]=url1+'v/'+pngTile[i*7+6];
+							var str='roadCondition['+(i*7+6)+']';
+							roadCondition[i*7+6] = Storage(str);
+							//map.load(roadTile[i]);							
+							$.ajaxSettings.async = false; //ajax同步
+							$.getJSON(roadTile[i*7+6], function(data,textStatus) { //用jquery的getJSON()方法获取GeoJSON数据
+								if(textStatus=="success")
+								{
+									roadCondition[i*7+6].set('features',data.features);
+									$(_this).trigger('data_updated');
+								}	
+							});															
+						}											
+					}
+
+					if(right==0&&left==1&&up==0&&down==1){//向左下拖动
+					
+						for(var i=4;i>=0;i--){
+							for(var j=6;j>=2;j--){
+								roadCondition[i*7+j]=roadCondition[(i+2)*7+(j-2)];
+							}							
+						}
+						for(var i=35;i<49;i++){
+							roadTile[i]=url1+'t/'+pngTile[i]+'/10';
+							var str='roadCondition['+i+']';
+							roadCondition[i] = Storage(str);
+							//map.load(roadTile[i]);							
+							$.ajaxSettings.async = false; //ajax同步
+							$.getJSON(roadTile[i], function(data,textStatus) { //用jquery的getJSON()方法获取GeoJSON数据
+								if(textStatus=="success")
+								{
+									roadCondition[i].set('features',data.features);
+									$(_this).trigger('data_updated');
+								}	
+							});															
+						}
+						for(var i=0;i<=4;i++){
+							roadTile[i*7]=url1+'v/'+pngTile[i*7];
+							var str='roadCondition['+(i*7)+']';
+							roadCondition[i*7] = Storage(str);
+							//map.load(roadTile[i]);							
+							$.ajaxSettings.async = false; //ajax同步
+							$.getJSON(roadTile[i*7], function(data,textStatus) { //用jquery的getJSON()方法获取GeoJSON数据
+								if(textStatus=="success")
+								{
+									roadCondition[i*7].set('features',data.features);
+									$(_this).trigger('data_updated');
+								}	
+							});															
+						}
+						for(var i=0;i<=4;i++){
+							roadTile[i*7+1]=url1+'v/'+pngTile[i*7+1];
+							var str='roadCondition['+(i*7+1)+']';
+							roadCondition[i*7+1] = Storage(str);
+							//map.load(roadTile[i]);							
+							$.ajaxSettings.async = false; //ajax同步
+							$.getJSON(roadTile[i*7+1], function(data,textStatus) { //用jquery的getJSON()方法获取GeoJSON数据
+								if(textStatus=="success")
+								{
+									roadCondition[i*7+1].set('features',data.features);
+									$(_this).trigger('data_updated');
+								}	
+							});															
+						}											
+					}
+
+
+					if(right==1&&left==0&&up==0&&down==1){//向右下拖动
+					
+						for(var i=6;i>=2;i--){
+							for(var j=6;j>=2;j--){
+								roadCondition[i*7+j]=roadCondition[(i-2)*7+(j-2)];
+							}							
+						}
+						for(var i=0;i<14;i++){
+							roadTile[i]=url1+'t/'+pngTile[i]+'/10';
+							var str='roadCondition['+i+']';
+							roadCondition[i] = Storage(str);
+							//map.load(roadTile[i]);							
+							$.ajaxSettings.async = false; //ajax同步
+							$.getJSON(roadTile[i], function(data,textStatus) { //用jquery的getJSON()方法获取GeoJSON数据
+								if(textStatus=="success")
+								{
+									roadCondition[i].set('features',data.features);
+									$(_this).trigger('data_updated');
+								}	
+							});															
+						}
+						for(var i=2;i<=6;i++){
+							roadTile[i*7]=url1+'v/'+pngTile[i*7];
+							var str='roadCondition['+(i*7)+']';
+							roadCondition[i*7] = Storage(str);
+							//map.load(roadTile[i]);							
+							$.ajaxSettings.async = false; //ajax同步
+							$.getJSON(roadTile[i*7], function(data,textStatus) { //用jquery的getJSON()方法获取GeoJSON数据
+								if(textStatus=="success")
+								{
+									roadCondition[i*7].set('features',data.features);
+									$(_this).trigger('data_updated');
+								}	
+							});															
+						}
+						for(var i=2;i<=6;i++){
+							roadTile[i*7+1]=url1+'v/'+pngTile[i*7+1];
+							var str='roadCondition['+(i*7+1)+']';
+							roadCondition[i*7+1] = Storage(str);
+							//map.load(roadTile[i]);							
+							$.ajaxSettings.async = false; //ajax同步
+							$.getJSON(roadTile[i*7+1], function(data,textStatus) { //用jquery的getJSON()方法获取GeoJSON数据
+								if(textStatus=="success")
+								{
+									roadCondition[i*7+1].set('features',data.features);
+									$(_this).trigger('data_updated');
+								}	
+							});															
+						}											
+					}
+
+
+					if(right==1&&left==0&&up==1&&down==0){//向右上拖动
+						for(var i=6;i>=2;i--){
+							for(var j=0;j<=4;j++){
+								roadCondition[i*7+j]=roadCondition[(i-2)*7+(j+2)];
+							}							
+						}
+						for(var i=0;i<14;i++){
+							roadTile[i]=url1+'t/'+pngTile[i]+'/10';
+							var str='roadCondition['+i+']';
+							roadCondition[i] = Storage(str);
+							//map.load(roadTile[i]);							
+							$.ajaxSettings.async = false; //ajax同步
+							$.getJSON(roadTile[i], function(data,textStatus) { //用jquery的getJSON()方法获取GeoJSON数据
+								if(textStatus=="success")
+								{
+									roadCondition[i].set('features',data.features);
+									$(_this).trigger('data_updated');
+								}	
+							});															
+						}
+						for(var i=2;i<=6;i++){
+							roadTile[i*7+5]=url1+'v/'+pngTile[i*7+5];
+							var str='roadCondition['+(i*7+5)+']';
+							roadCondition[i*7+5] = Storage(str);
+							//map.load(roadTile[i]);							
+							$.ajaxSettings.async = false; //ajax同步
+							$.getJSON(roadTile[i*7+5], function(data,textStatus) { //用jquery的getJSON()方法获取GeoJSON数据
+								if(textStatus=="success")
+								{
+									roadCondition[i*7+5].set('features',data.features);
+									$(_this).trigger('data_updated');
+								}	
+							});															
+						}
+						for(var i=2;i<=6;i++){
+							roadTile[i*7+6]=url1+'v/'+pngTile[i*7+6];
+							var str='roadCondition['+(i*7+6)+']';
+							roadCondition[i*7+6] = Storage(str);
+							//map.load(roadTile[i]);							
+							$.ajaxSettings.async = false; //ajax同步
+							$.getJSON(roadTile[i*7+6], function(data,textStatus) { //用jquery的getJSON()方法获取GeoJSON数据
+								if(textStatus=="success")
+								{
+									roadCondition[i*7+6].set('features',data.features);
+									$(_this).trigger('data_updated');
+								}	
+							});															
+						}											
+					}
+
+					if(right==0&&left==0&&up==0&&down==1){//向下拖动
+						for(var i=0;i<7;i++){
+							for(var j=6;j>=2;j--){
+								roadCondition[i*7+j]=roadCondition[i*7+j-2];
+							}							
+						}
+						for(var i=0;i<7;i++){
+							for(var j=0;j<2;j++){
+								//roadCondition[i*7+j]
+								roadTile[i*7+j]=url1+'v/'+pngTile[i*7+j];
+								var str='roadCondition['+(i*7+j)+']';
+								roadCondition[i*7+j] = Storage(str);
+								//map.load(roadTile[i]);							
+								$.ajaxSettings.async = false; //ajax同步
+								$.getJSON(roadTile[i*7+j], function(data,textStatus) { //用jquery的getJSON()方法获取GeoJSON数据
+									if(textStatus=="success")
+									{
+										roadCondition[i*7+j].set('features',data.features);
+										$(_this).trigger('data_updated');
+									}	
+								});								
+							}							
+						}												
+					}
+
+					if(right==0&&left==0&&up==1&&down==0){//向上拖动
+						for(var i=0;i<7;i++){
+							for(var j=0;j<5;j++){
+								roadCondition[i*7+j]=roadCondition[i*7+j+2];
+							}							
+						}
+						for(var i=0;i<7;i++){
+							for(var j=5;j<7;j++){
+								//roadCondition[i*7+j]
+								roadTile[i*7+j]=url1+'v/'+pngTile[i*7+j];
+								var str='roadCondition['+(i*7+j)+']';
+								roadCondition[i*7+j] = Storage(str);
+								//map.load(roadTile[i]);							
+								$.ajaxSettings.async = false; //ajax同步
+								$.getJSON(roadTile[i*7+j], function(data,textStatus) { //用jquery的getJSON()方法获取GeoJSON数据
+									if(textStatus=="success")
+									{
+										roadCondition[i*7+j].set('features',data.features);
+										$(_this).trigger('data_updated');
+									}	
+								});								
+							}							
+						}												
+					}
+
+					if(right==0&&left==1&&up==0&&down==0){//向左拖动
+						for(var i=0;i<35;i++){
+							//var str='roadCondition['+i+']';
+							//roadCondition[i] = Storage(str);
+							roadCondition[i]=roadCondition[i+14];
+						}
+
+						for(var i=35;i<49;i++){
+							roadTile[i]=url1+'t/'+pngTile[i]+'/10';
+							var str='roadCondition['+i+']';
+							roadCondition[i] = Storage(str);
+							//map.load(roadTile[i]);							
+							$.ajaxSettings.async = false; //ajax同步
+							$.getJSON(roadTile[i], function(data,textStatus) { //用jquery的getJSON()方法获取GeoJSON数据
+								if(textStatus=="success")
+								{
+									roadCondition[i].set('features',data.features);
+									$(_this).trigger('data_updated');
+								}	
+							});
+						}												
+					}
+
+					if(right==1&&left==0&&up==0&&down==0){//向右拖动
+						for(var i=48;i>=14;i--){
+							//var str='roadCondition['+i+']';
+							//roadCondition[i] = Storage(str);
+							roadCondition[i]=roadCondition[i-14];
+						}
+						for(var i=0;i<14;i++){
+							roadTile[i]=url1+'t/'+pngTile[i]+'/10';
+							var str='roadCondition['+i+']';
+							roadCondition[i] = Storage(str);
+							//map.load(roadTile[i]);							
+							$.ajaxSettings.async = false; //ajax同步
+							$.getJSON(roadTile[i], function(data,textStatus) { //用jquery的getJSON()方法获取GeoJSON数据
+								if(textStatus=="success")
+								{
+									roadCondition[i].set('features',data.features);
+									$(_this).trigger('data_updated');
+								}	
+							});
+						}
+					}
+
+
+
+
+
+				}				
 				
 
 				changeCenter=0;
@@ -1249,9 +1688,18 @@ Map主函数的原型方法-地图混合渲染函数
 			for (var i = 0; i < 7; i++) {
 				for(var j = 0; j < 7; j++){
 					Tilefunction(countTile++,zoom,x-3+i,y-3+j,move_x[i],move_y[j]);
-				}
-				
+				}				
 			};
+			//way_name=[];
+			//num=0;
+
+
+			//测试渲染时间
+/*					var img16 = new Image();
+					img16.src=url1+'i/'+pngTile[countTile-1];	
+					//img16.src=url2+pngTile[TileNum]+'.png';	
+					ctx.drawImage(img16,-256,0);
+*/			//test end
 
 		}//draw_Image
 
@@ -1296,8 +1744,10 @@ Map主函数的原型方法-切片z/x/y转bbox（1,2,3,4）边框经纬度
 		var y = lat2tile(lat,zoom); //中心切片的y值
 
 		var flag =1;  //地图数据源的信号函数 初始化为0；
-		var road_flag=0;
+		var road_flag=0; //路网触发信号
 		var changeCenter=1; //中心位置切片修正触发信号
+		var roadCondition_flag=0;//路况触发信号
+		var countFlag=0;
 	 
 		//鼠标事件位移量初始化
 		var eventX=0; 
@@ -1310,7 +1760,10 @@ Map主函数的原型方法-切片z/x/y转bbox（1,2,3,4）边框经纬度
 		var url3 ="http://192.168.1.9:23021/" 
 
 
-		var store = new Array;
+		var store = new Array(); //切片块缓存
+
+
+		var roadCondition = new Array();
 			//检测是否联网
 /*
 		var img16 = new Image();
