@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, user-scalable=no">
 	<title>Maps &ndash; Wanli Yang</title>
 	<link rel="stylesheet" href="geojson_html5-master/stylesheets/maps.css" />
 </head>
@@ -9,11 +10,11 @@
 	<h1>GeoJSON AND IMAGE MAP</h1>
 
 	<div id="map">
-		<button id="zoom-out">zoom out - </button>
-	    <button id="zoom-in">zoom in + </button>
-		<button id="vector map">矢量地图 </button>
-	    <button id="img map">OSM地图 </button>
-	    <button id="road map">路况地图 </button>	  
+		<button id="zoom-out">缩小</button>
+	    <button id="zoom-in">放大</button>
+		<button id="vector map">矢量地图</button>
+	    <button id="img map">图片地图</button>
+	    <button id="road map">路况地图</button>	  
 	</div>
 
 	<script src="geojson_html5-master/javascript/storage.js"></script>
@@ -49,6 +50,7 @@ Map主函数
 
 		// 注册事件函数 events
 		var _this = this;
+//PC浏览器点击事件
 		document.getElementById('road map').onclick = function() {
 			flag=1;
 			road_flag=1;
@@ -91,15 +93,22 @@ Map主函数
 			roadConditionStorageFlag=0;
 			_this.draw_Image(zoom,x,y);
 		};
-
-		$(window).on('resize', function() {
+//PC端点击事件-END
+//移动端点击事件
+//移动端点击事件-END
+		$(window).on('resize', function() { //屏幕大小发生变化
 			clearTimeout(_this.resizeTimeout);
 			_this.resizeTimeout = setTimeout(function() {
 				//_this.draw();
 				_this.draw_Image(zoom,x,y);
 			}, 500);
 		});
-	
+/*
+		this.$canvas.on('mousewheel', function(event) {
+		_this.scale = Math.max(100, _this.scale - event.originalEvent.deltaY / 2);
+		_this.draw_Image(zoom,x,y);
+	});
+*/	
 		this.$canvas.on('mousewheel', function(event) { //鼠标滚动实现缩放功能
 			//_this.scale = Math.max(100, _this.scale - event.originalEvent.deltaY / 2);
 			if(event.originalEvent.deltaY>0){ //向上滚动-放大一个等级
@@ -128,6 +137,7 @@ Map主函数
 			};
 
 			$(this).bind('touchmove', function(event) {
+				event.preventDefault();
 				var addX = 0;
 				var addY = 0;
 				var delta = { //位移长度
@@ -135,8 +145,8 @@ Map主函数
 					y: _this.last_position.y - event.originalEvent.touches[0].clientY
 				};
 
-				 eventX -=delta.x; //位移后的新位置
-				 eventY -=delta.y; //位移后的新位置
+				 eventX -=delta.x*1.5; //位移后的新位置
+				 eventY -=delta.y*1.5; //位移后的新位置
 
 				 _this.last_position = { //当前位置初始化
 				 	x: event.originalEvent.touches[0].clientX,
@@ -475,7 +485,7 @@ Map主函数的原型方法-渲染GeoJSON数据
 			 	$.each(coordinates, function(nindx, node) {
 			 		if ((node[0] >= Math.min(bbox[0], bbox[2]) && node[0] <= Math.max(bbox[0], bbox[2]))&&(node[1] >= Math.min(bbox[1], bbox[3]) && node[1] <= Math.max(bbox[1], bbox[3]))) { RoadInRange = true };
 					//判断该点是否在切片范围内
-
+					if(!RoadInRange&&obj.properties.highway != undefined && obj.properties.highway != null) return;
 					if(hasInRange) { //如果该点在切片范围内
 						var x_ = (node[0] - bbox[0]) * xmult + moveX; //投影至画布上的x轴坐标
 				 		var y_ = (bbox[3] - node[1]) * ymult + moveY; //投影至画布上的y轴坐标
@@ -492,7 +502,7 @@ Map主函数的原型方法-渲染GeoJSON数据
 						else {
 							ctx.lineTo(x_, y_);
 
-							if(nindx==7){
+							if(nindx==12){
 								//nameX=x_;
 								//nameY=y_;	
 								if(obj.properties.name != undefined && obj.properties.highway != undefined && obj.properties.highway != null){ 
@@ -921,7 +931,7 @@ if(road_flag==0){
 
 
 			}; 
-			console.log(way_name);	
+			//console.log(way_name);	
 			ctx.fillStyle = '#FFDAB9';
 			way_name=[];
 			num=0;
@@ -1763,6 +1773,7 @@ Map主函数的原型方法-切片z/x/y转bbox（1,2,3,4）边框经纬度
 		// URL - 对应服务器
 		var url1 ="http://166.111.68.197:11193/geoserver/";
 		//var url1="http://10.108.21.81/geoserver/"
+		//var url1="http://192.168.2.119/geoserver/"
 		var url2 ="http://otile2.mqcdn.com/tiles/1.0.0/osm/";
 		var url3 ="http://192.168.1.9:23021/" 
 
