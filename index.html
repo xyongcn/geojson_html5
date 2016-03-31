@@ -12,7 +12,7 @@
 	<div id="map">
 		<button id="zoom-out">缩小</button>
 	    <button id="zoom-in">放大</button>
-		<button id="vector map">矢量地图</button>
+		<button id="vector map">混合地图</button>
 	    <button id="img map">图片地图</button>
 	    <button id="road map">路况地图</button>	  
 	</div>
@@ -64,7 +64,9 @@ Map主函数
 			flag=0;
 			road_flag=0;
 			roadCondition_flag=0;
+			//eventX=0;eventY=0;
 			_this.draw_Image(zoom,x,y);
+			
 
 		}
 		document.getElementById('vector map').onclick = function() {
@@ -556,26 +558,28 @@ Map主函数的原型方法-渲染GeoJSON数据
 
 			 	}			 	
 */
-if(road_flag==0){
+//if(road_flag==0){
            //building water area
 	            if(obj.properties["building"] != null) {
 	            	//根据建筑渲染规则"stylesheets/building.js" 初始化建筑对象
 	            	var building = new buildingCss('building',obj.properties.building,zoom);
 					if(obj.geometry.type=='Polygon' || obj.geometry.type == 'MultiPolygon'){
 					    ctx.fillStyle = building[1]; 
+					    ctx.globalAlpha = 0.9; 
 					    ctx.fill();
 					}            	
 	            	ctx.strokeStyle = building[0];
 	            	ctx.lineWidth = building[2];
 	            	ctx.stroke();
 	            }
-	       	//type_11 :  'leisure' 'wetland' 'tourism' 'landuse' 'amenity' 'military' 'natural' 'power' 'aeroway'=='apron'||'aerodrome' 'highway'=='services'||'rest_area' 'railway'=='station'     
+	       	//type_11 :  'leisure' 'wetland' 'tourism' 'landuse' 'amenity' 'military' 'natural' 'power' 'aeroway'=='apron'||'aerodrome' 'highway'=='services'||'rest_area' 'railway'=='station'   
+	       	//ctx.fillStyle = 'pink';  
 	            if(obj.properties.railway == 'station') {
 	            	//根据水域渲染规则"stylesheets/landcover.js" 初始化水域对象
 	            	var landcover = new landcoverCss('railway',obj.properties,zoom);
 	            	if(obj.geometry.type=='Polygon' || obj.geometry.type == 'MultiPolygon'){
 					    ctx.fillStyle = landcover[1];
-					    ctx.globalAlpha = 0.9; 
+					    ctx.globalAlpha = 0.8; 
 	            		ctx.fill();
 					}	
 	            	//if(zoom>=12){
@@ -589,7 +593,7 @@ if(road_flag==0){
 	            	var landcover = new landcoverCss('highway',obj.properties,zoom);
 	            	if(obj.geometry.type=='Polygon' || obj.geometry.type == 'MultiPolygon'){
 					    ctx.fillStyle = landcover[1];
-					    ctx.globalAlpha = 0.9; 
+					    ctx.globalAlpha = 0.8; 
 	            		ctx.fill();
 					}	
 	            }
@@ -598,7 +602,7 @@ if(road_flag==0){
 	            	var landcover = new landcoverCss('aeroway',obj.properties,zoom);
 	            	if(obj.geometry.type=='Polygon' || obj.geometry.type == 'MultiPolygon'){
 					    ctx.fillStyle = landcover[1];
-					    ctx.globalAlpha = 0.9; 
+					    ctx.globalAlpha = 0.8; 
 	            		ctx.fill();
 					}	
 	            }
@@ -607,7 +611,7 @@ if(road_flag==0){
 	            	var landcover = new landcoverCss('power',obj.properties,zoom);
 	            	if(obj.geometry.type=='Polygon' || obj.geometry.type == 'MultiPolygon'){
 					    ctx.fillStyle = landcover[1];
-					    ctx.globalAlpha = 0.9; 
+					    ctx.globalAlpha = 0.8; 
 	            		ctx.fill();
 					}	
 	            }
@@ -616,7 +620,7 @@ if(road_flag==0){
 	            	var landcover = new landcoverCss('natural',obj.properties,zoom);
 	            	if(obj.geometry.type=='Polygon' || obj.geometry.type == 'MultiPolygon'){
 					    ctx.fillStyle = landcover[1];
-					    ctx.globalAlpha = 0.9; 
+					    ctx.globalAlpha = 0.8; 
 	            		ctx.fill();
 					}	
 	            }
@@ -625,7 +629,7 @@ if(road_flag==0){
 	            	var landcover = new landcoverCss('military',obj.properties,zoom);
 	            	if(obj.geometry.type=='Polygon' || obj.geometry.type == 'MultiPolygon'){
 					    ctx.fillStyle = landcover[1];
-					    ctx.globalAlpha = 0.9; 
+					    ctx.globalAlpha = 0.8; 
 	            		ctx.fill();
 					}	
 	            }
@@ -635,7 +639,7 @@ if(road_flag==0){
 	            	var landcover = new landcoverCss('amenity',obj.properties,zoom);
 	            	if(obj.geometry.type=='Polygon' || obj.geometry.type == 'MultiPolygon'){
 					    ctx.fillStyle = landcover[1];
-					    ctx.globalAlpha = 0.9; 
+					    ctx.globalAlpha = 0.8; 
 	            		ctx.fill();
 					}	
 	            }
@@ -645,7 +649,7 @@ if(road_flag==0){
 	            	var landcover = new landcoverCss('landuse',obj.properties,zoom);
 	            	if(obj.geometry.type=='Polygon' || obj.geometry.type == 'MultiPolygon'){
 					    ctx.fillStyle = landcover[1];
-					    ctx.globalAlpha = 0.9; 
+					    ctx.globalAlpha = 0.8; 
 	            		ctx.fill();
 					}	
 	            }
@@ -654,7 +658,7 @@ if(road_flag==0){
 	            	var landcover = new landcoverCss('tourism',obj.properties,zoom);
 	            	if(obj.geometry.type=='Polygon' || obj.geometry.type == 'MultiPolygon'){
 					    ctx.fillStyle = landcover[1];
-					    ctx.globalAlpha = 0.9; 
+					    ctx.globalAlpha = 0.8; 
 	            		ctx.fill();
 					}	
 	            }
@@ -663,7 +667,7 @@ if(road_flag==0){
 	            	var landcover = new landcoverCss('wetland',obj.properties,zoom);
 	            	if(obj.geometry.type=='Polygon' || obj.geometry.type == 'MultiPolygon'){
 					    ctx.fillStyle = landcover[1];
-					    ctx.globalAlpha = 0.9; 
+					    ctx.globalAlpha = 0.8; 
 	            		ctx.fill();
 					}	
 	            }
@@ -672,7 +676,7 @@ if(road_flag==0){
 	            	var landcover = new landcoverCss('leisure',obj.properties,zoom);
 	            	if(obj.geometry.type=='Polygon' || obj.geometry.type == 'MultiPolygon'){
 					    ctx.fillStyle = landcover[1];
-					    ctx.globalAlpha = 0.9; 
+					    ctx.globalAlpha = 0.8; 
 	            		ctx.fill();
 					}	
 	            }
@@ -685,7 +689,7 @@ if(road_flag==0){
 	            	var water = new waterCss('natural',obj.properties,zoom);
 	            	if(obj.geometry.type=='Polygon' || obj.geometry.type == 'MultiPolygon'){
 		            	ctx.fillStyle = water[1];
-		            	ctx.globalAlpha = 0.9; 
+		            	ctx.globalAlpha = 0.8; 
 		            	ctx.fill();
 					}
 
@@ -696,7 +700,7 @@ if(road_flag==0){
 	            	var water = new waterCss('landuse',obj.properties,zoom);
 	            	if(obj.geometry.type=='Polygon' || obj.geometry.type == 'MultiPolygon'){
 		            	ctx.fillStyle = water[1];
-		            	ctx.globalAlpha = 0.9; 
+		            	ctx.globalAlpha = 0.8; 
 		            	ctx.fill();	
 					}	            	
 
@@ -707,11 +711,13 @@ if(road_flag==0){
 	            	var water = new waterCss('waterway',obj.properties,zoom);
 	            	if(obj.geometry.type=='Polygon' || obj.geometry.type == 'MultiPolygon'){
 		            	ctx.fillStyle = water[1];
-		            	ctx.globalAlpha = 0.9; 
+		            	ctx.globalAlpha = 0.8; 
 		            	ctx.fill();	
 					}
 	 
 	            }
+	            ctx.globalAlpha = 0.9; 
+	            ctx.fillStyle = '#C1FFC1'; 
 
 
 
@@ -753,7 +759,7 @@ if(road_flag==0){
 	            //ctx.fillStyle = 'black';
 				//ctx.fillText(num,m[num-1],n[num-1]);
 
-	}//road_flag==0;
+//	}//road_flag==0;
 
 			 	if(zoom>=5 && (obj.properties.highway != undefined && obj.properties.highway != null)) {
 			 		//根据道路渲染规则"stylesheets/ways.js" 初始化道路对象
@@ -880,19 +886,19 @@ if(road_flag==0){
 				
 					ctx.lineJoin="round";
 					ctx.globalAlpha = 0.7; 
-					if(obj.properties.average_speed<5){
+					if(obj.properties.average_speed<5.56){
 						ctx.strokeStyle = '#EE0000'; //线条颜色 特别堵
 					}
-					if(obj.properties.average_speed>=5 && obj.properties.average_speed<9){
+					if(obj.properties.average_speed>=5.56 && obj.properties.average_speed<7.41){
 						ctx.strokeStyle = '#EE3B3B'; //线条颜色 堵
 					}
-					if(obj.properties.average_speed>=9 && obj.properties.average_speed<13){
+					if(obj.properties.average_speed>=7.41 && obj.properties.average_speed<9.26){
 						ctx.strokeStyle = '#EEAD0E'; //线条颜色 一般堵
 					}
-					if(obj.properties.average_speed>=13 && obj.properties.average_speed<17){
+					if(obj.properties.average_speed>=9.26 && obj.properties.average_speed<11.11){
 						ctx.strokeStyle = '#EEEE00'; //线条颜色 有点堵
 					}
-					if(obj.properties.average_speed>=17){
+					if(obj.properties.average_speed>=11.11){
 						ctx.strokeStyle = '#7FFF00'; //线条颜色 顺畅
 					}					
 					
@@ -922,6 +928,7 @@ if(road_flag==0){
 					j++;
 				}
 				i=j;
+				ctx.globalAlpha = 0.4; 
 					ctx.font="10px Arial";
 					ctx.textBaseline="middle";
 					ctx.textAlign = "center";
@@ -958,6 +965,9 @@ Map主函数的原型方法-地图混合渲染函数
 			var jsonTile = new Array(); //矢量切片
 			var jsonT = new Array(); //矢量切片
 			var roadTile = new Array(); //路况切片
+
+			var pngTileAddZoom = new Array();  //下级切片
+			var pngTileSubZoom = new Array();  //上级切片
 			// Create or get an existing store
 
 
@@ -980,6 +990,25 @@ Map主函数的原型方法-地图混合渲染函数
 				for (var j = 0; j < 7 ; j++) {
 					//图像切片命名 - 文件路径
 					pngTile[7*i+j] = zoom+'/'+(x-3+i)+'/'+(y-3+j); 
+					//本地矢量切片命名 - 文件路径
+					//jsonTile[7*i+j] =''+'Tiles'+'/'+zoom+'/'+(x-3+i)+'/'+(y-3+j)+'.'+'json'; 
+				};
+			};
+			//zoom in: pngTileAddZoom
+			for (var i = 0; i < 7; i++) {
+				for (var j = 0; j < 7 ; j++) {
+					//图像切片命名 - 文件路径
+					pngTileAddZoom[7*i+j] = (zoom+1)+'/'+(2*x-3+i)+'/'+(2*y-3+j); 
+
+					//本地矢量切片命名 - 文件路径
+					//jsonTile[7*i+j] =''+'Tiles'+'/'+zoom+'/'+(x-3+i)+'/'+(y-3+j)+'.'+'json'; 
+				};
+			};
+			//zoom out: pngTileSubZoom
+			for (var i = 0; i < 7; i++) {
+				for (var j = 0; j < 7 ; j++) {
+					//图像切片命名 - 文件路径
+					pngTileSubZoom[7*i+j] = (zoom-1)+'/'+(Math.round(x/2)-3+i)+'/'+(Math.round(y/2)-3+j); 
 					//本地矢量切片命名 - 文件路径
 					//jsonTile[7*i+j] =''+'Tiles'+'/'+zoom+'/'+(x-3+i)+'/'+(y-3+j)+'.'+'json'; 
 				};
@@ -1023,9 +1052,15 @@ Map主函数的原型方法-地图混合渲染函数
 							jsonTile[i]=url1+'v/'+pngTile[i];
 							var str='store['+i+']';
 							store[i] = Storage(str);
-							//map.load(jsonTile[i]);							
+							//map.load(jsonTile[i]);
 							$.ajaxSettings.async = false; //ajax同步
-							$.getJSON(jsonTile[i], function(data,textStatus) { //用jquery的getJSON()方法获取GeoJSON数据
+
+							$.getJSON(jsonTile[i], function(data,textStatus) { 
+							//用jquery的getJSON()方法获取GeoJSON数据
+								//在数据传输完成前先进行其他流程
+					/*
+
+					*/
 								if(textStatus=="success")
 								{
 									/*
@@ -1034,7 +1069,36 @@ Map主函数的原型方法-地图混合渲染函数
 										store[i].set('features',data.features);
 									}
 									*/
+									//异步无法提供缓存解决方案--只能同步获取json再存储
 									store[i].set('features',data.features);
+									$(_this).trigger('data_updated');
+								}	
+							});
+						}
+						for(var i=0;i<49;i++){
+							//预取上一级zoom和下一级zoom
+							var SubZoomURL=url1+'v/'+pngTileSubZoom[i];
+							$.ajaxSettings.async = true; //ajax同步
+
+							$.getJSON(SubZoomURL, function(data,textStatus) { //用jquery的getJSON()方法获取GeoJSON数据
+								//在数据传输完成前先进行其他流程
+						
+								Tilefunction0(i);
+								if(textStatus=="success")
+								{
+									$(_this).trigger('data_updated');
+								}	
+							});
+
+							var AddZoomURL=url1+'v/'+pngTileAddZoom[i];
+							$.ajaxSettings.async = true; //ajax同步
+
+							$.getJSON(AddZoomURL, function(data,textStatus) { 
+								//在数据传输完成前先进行其他流程
+						
+								//Tilefunction0(i);
+								if(textStatus=="success")
+								{
 									$(_this).trigger('data_updated');
 								}	
 							});
@@ -1687,26 +1751,51 @@ Map主函数的原型方法-地图混合渲染函数
 			 	up=0;
 
 			}
-
-			function Tilefunction(TileNum,zz,xx,yy,canvasX,canvasY)
-			{
-				if(flag==0) {
-					var img16 = new Image();
-					img16.src=url1+'i/'+pngTile[TileNum];	
+			var img49= new Array();
+			function Tilefunction0(TileNum)
+			{ //图片瓦片预取
+				//if(flag==0) {
+					img49[TileNum] = new Image();
+					//img49[TileNum].src=url1+'i/'+pngTile[TileNum];
+					img49[TileNum].src=url2+pngTile[TileNum]+'.png';		
 					//img16.src=url2+pngTile[TileNum]+'.png';	
-					ctx.drawImage(img16,canvasX+eventX,canvasY+eventY);
-				};
-				if(flag==1) {
+					//ctx.drawImage(img49[TileNum],canvasX+eventX,canvasY+eventY);
+				//};
+			}
+			function Tilefunction1(TileNum,zz,xx,yy,canvasX,canvasY)
+			{
+				//if(flag==1) {
 					map.draw_json(ctx,TileNum,zz,xx,yy,canvasX+eventX,canvasY+eventY);
-				};
+				//};
 			}
 
-			var countTile=0;
-			for (var i = 0; i < 7; i++) {
-				for(var j = 0; j < 7; j++){
-					Tilefunction(countTile++,zoom,x-3+i,y-3+j,move_x[i],move_y[j]);
-				}				
-			};
+			if(flag ==0){
+				var countTile=0;
+				for (var i = 0; i < 7; i++) {
+					for(var j = 0; j < 7; j++){
+						//Tilefunction0(countTile,move_x[i],move_y[j]);
+						img49[countTile] = new Image();
+						//img49[countTile].src=url1+'i/'+pngTile[countTile];
+						img49[countTile].src=url2+pngTile[countTile]+'.png';	
+						ctx.drawImage(img49[countTile++],move_x[i]+eventX,move_y[j]+eventY);
+						//Tilefunction0(24,zoom,x,y,move_x[3],move_y[3]);
+						//Tilefunction0(15,zoom,x,y,move_x[3],move_y[2]);
+					}				
+				};				
+			}
+			if(changeCenter==0&&flag ==1){
+				var countTile=0;
+				for (var i = 0; i < 7; i++) {
+					for(var j = 0; j < 7; j++){
+						Tilefunction0(countTile);
+						ctx.drawImage(img49[countTile],move_x[i]+eventX,move_y[j]+eventY);
+						Tilefunction1(countTile++,zoom,x-3+i,y-3+j,move_x[i],move_y[j]);
+						
+						//Tilefunction0(24,zoom,x,y,move_x[3],move_y[3]);
+					}				
+				};				
+			}			
+
 			//way_name=[];
 			//num=0;
 
@@ -1772,9 +1861,10 @@ Map主函数的原型方法-切片z/x/y转bbox（1,2,3,4）边框经纬度
 
 		// URL - 对应服务器
 		var url1 ="http://166.111.68.197:11193/geoserver/";
-		//var url1="http://10.108.21.81/geoserver/"
+		//var url1="http://10.108.21.66/geoserver/"
 		//var url1="http://192.168.2.119/geoserver/"
 		var url2 ="http://otile2.mqcdn.com/tiles/1.0.0/osm/";
+		//var url2 ="http://tile.opencyclemap.org/cycle/";
 		var url3 ="http://192.168.1.9:23021/" 
 
 
