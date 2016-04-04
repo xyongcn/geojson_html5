@@ -14,6 +14,7 @@
 	    <button id="zoom-in">放大</button>
 		<button id="vector map">混合地图</button>
 	    <button id="img map">图片地图</button>
+	    <button id="Beijing map">北京市</button>
 	    <button id="road map">路况地图</button>	  
 	</div>
 
@@ -32,6 +33,12 @@ Map主函数
 参数：[div id="map"] [,zoom] [,x] [,y] 即地图中心切片位置：zoom/x/y
 功能：地图初始化；地图操作-事件函数（鼠标滚动、缩放、移动）
 */
+	function lon2tile(lon,zoom) { //经度转切片坐标x函数
+		return (Math.floor((lon + 180) / 360 * Math.pow(2, zoom)));
+	};
+	function lat2tile(lat,zoom) { //纬度转切片坐标y函数 
+		return (Math.floor((1 - Math.log(Math.tan(lat * Math.PI / 180) + 1 / Math.cos(lat * Math.PI / 180)) / Math.PI) / 2 * Math.pow(2, zoom)));
+	};
 	var Map = function(div,zoom,x,y) {  //Map主函数功能
 		this.$div = $(div);
 
@@ -59,6 +66,26 @@ Map主函数
 			countFlag++;
 			_this.draw_Image(zoom,x,y);
 
+		}
+		document.getElementById('Beijing map').onclick = function() {
+		zoom = 11;
+		x = lon2tile(116.3912,zoom); //中心切片的x值
+		y = lat2tile(39.9059,zoom); //中心切片的y值
+		flag =1;  //地图数据源的信号函数 初始化为0；
+		road_flag=0; //路网触发信号
+		changeCenter=1; //中心位置切片修正触发信号
+		roadCondition_flag=0;//路况触发信号
+		countFlag=0;	 
+		//鼠标事件位移量初始化
+		eventX=0; 
+		eventY=0;
+		roadConditionStorageFlag=0;		
+		right=0;
+		left=0;
+		up=0;
+		down=0;
+		_this.draw_Image(zoom,x,y);
+
 		}		
 		document.getElementById('img map').onclick = function() {
 			flag=0;
@@ -79,21 +106,31 @@ Map主函数
 
 
 		document.getElementById('zoom-in').onclick = function() {
-		    zoom=zoom+1;
-			x=2*x;
-			y=2*y;
-			changeCenter=1;
-			roadConditionStorageFlag=0;
-			_this.draw_Image(zoom,x,y);
+			if(zoom<19){
+			    zoom=zoom+1;
+				x=2*x;
+				y=2*y;
+		eventX=0; 
+		eventY=0;				
+				changeCenter=1;
+				roadConditionStorageFlag=0;
+				_this.draw_Image(zoom,x,y);	
+			}
 		};
 
 		document.getElementById('zoom-out').onclick = function() {
-		    zoom=zoom-1;
-			x=Math.round(x/2);
-			y=Math.round(y/2);
-			changeCenter=1;
-			roadConditionStorageFlag=0;
-			_this.draw_Image(zoom,x,y);
+			if(zoom>3){
+			    zoom=zoom-1;
+				x=Math.round(x/2);
+				y=Math.round(y/2);
+		eventX=0; 
+		eventY=0;
+				changeCenter=1;
+				roadConditionStorageFlag=0;
+				if(zoom<10) flag=0; 
+				_this.draw_Image(zoom,x,y);				
+			}
+
 		};
 //PC端点击事件-END
 //移动端点击事件
@@ -114,20 +151,26 @@ Map主函数
 		this.$canvas.on('mousewheel', function(event) { //鼠标滚动实现缩放功能
 			//_this.scale = Math.max(100, _this.scale - event.originalEvent.deltaY / 2);
 			if(event.originalEvent.deltaY>0){ //向上滚动-放大一个等级
-				zoom=zoom+1;
-				x=2*x;
-				y=2*y;
-				changeCenter=1;
-				roadConditionStorageFlag=0;
-				_this.draw_Image(zoom,x,y); //地图切片渲染函数
+				if(zoom<19){
+					zoom=zoom+1;
+					x=2*x;
+					y=2*y;
+					changeCenter=1;
+					roadConditionStorageFlag=0;
+					_this.draw_Image(zoom,x,y); //地图切片渲染函数
+				}
 			}
 			if(event.originalEvent.deltaY<0){ //向下滚动-缩小一个等级
-				zoom=zoom-1;
-				x=Math.round(x/2);
-				y=Math.round(y/2);
-				changeCenter=1;
-				roadConditionStorageFlag=0;
-				_this.draw_Image(zoom,x,y); //地图切片渲染函数
+				if(zoom>3){
+					zoom=zoom-1;
+					x=Math.round(x/2);
+					y=Math.round(y/2);
+					changeCenter=1;
+					roadConditionStorageFlag=0;
+					if(zoom<10) flag=0; 
+					_this.draw_Image(zoom,x,y); //地图切片渲染函数					
+				}
+
 			}
 		});
 	
@@ -1075,34 +1118,45 @@ Map主函数的原型方法-地图混合渲染函数
 								}	
 							});
 						}
-						for(var i=0;i<49;i++){
+						if(zoom>=10&&zoom<=18){
+							
 							//预取上一级zoom和下一级zoom
-							var SubZoomURL=url1+'v/'+pngTileSubZoom[i];
-							$.ajaxSettings.async = true; //ajax同步
+							if(zoom<15){
+								for(var i=0;i<49;i++){
+									var SubZoomURL=url1+'v/'+pngTileSubZoom[i];
+									$.ajaxSettings.async = true; //ajax同步
 
-							$.getJSON(SubZoomURL, function(data,textStatus) { //用jquery的getJSON()方法获取GeoJSON数据
-								//在数据传输完成前先进行其他流程
-						
-								Tilefunction0(i);
-								if(textStatus=="success")
-								{
-									$(_this).trigger('data_updated');
-								}	
-							});
+									$.getJSON(SubZoomURL, function(data,textStatus) { //用jquery的getJSON()方法获取GeoJSON数据
+										//在数据传输完成前先进行其他流程
+								
+										//Tilefunction0(i);
+										//TilefunctionSub(i);
+										if(textStatus=="success")
+										{
+											$(_this).trigger('data_updated');
+										}	
+									});								
+								}
+							}
+							if(zoom>15){
+								for(var i=0;i<49;i++){
+									var AddZoomURL=url1+'v/'+pngTileAddZoom[i];
+									$.ajaxSettings.async = true; //ajax同步
 
-							var AddZoomURL=url1+'v/'+pngTileAddZoom[i];
-							$.ajaxSettings.async = true; //ajax同步
-
-							$.getJSON(AddZoomURL, function(data,textStatus) { 
-								//在数据传输完成前先进行其他流程
-						
-								//Tilefunction0(i);
-								if(textStatus=="success")
-								{
-									$(_this).trigger('data_updated');
-								}	
-							});
-						}												
+									$.getJSON(AddZoomURL, function(data,textStatus) { 
+										//在数据传输完成前先进行其他流程
+								
+										//Tilefunction0(i);
+										//TilefunctionAdd(i);
+										if(textStatus=="success")
+										{
+											$(_this).trigger('data_updated');
+										}	
+									});	
+								}								
+							}							
+						}
+												
 					}
 
 					if(right==0&&left==1&&up==1&&down==0){//向左上拖动
@@ -1418,7 +1472,7 @@ Map主函数的原型方法-地图混合渲染函数
 
 				}
 //路况切片的加载和缓存
-				if(flag==1 && roadCondition_flag==1){
+				if(flag==1 && roadCondition_flag==1 && zoom>14){
 
 					if(right==0&&left==0&&up==0&&down==0&&roadConditionStorageFlag==0){
 						for(var i=0;i<49;i++){
@@ -1757,16 +1811,50 @@ Map主函数的原型方法-地图混合渲染函数
 				//if(flag==0) {
 					img49[TileNum] = new Image();
 					//img49[TileNum].src=url1+'i/'+pngTile[TileNum];
-					img49[TileNum].src=url2+pngTile[TileNum]+'.png';		
-					//img16.src=url2+pngTile[TileNum]+'.png';	
+					//img49[TileNum].src=url3+pngTile[TileNum]+'.png';
+					img49[TileNum].src=url2+pngTile[TileNum];	
+	
 					//ctx.drawImage(img49[TileNum],canvasX+eventX,canvasY+eventY);
 				//};
 			}
+			function TilefunctionAdd(TileNum)
+			{ //图片瓦片预取
+				//if(flag==0) {
+					img49[TileNum] = new Image();
+					//img49[TileNum].src=url1+'i/'+pngTile[TileNum];
+					//img49[TileNum].src=url3+pngTileAddZoom[TileNum]+'.png';
+					img49[TileNum].src=url2+pngTileAddZoom[TileNum];	
+
+					//ctx.drawImage(img49[TileNum],canvasX+eventX,canvasY+eventY);
+				//};
+			}
+			function TilefunctionSub(TileNum)
+			{ //图片瓦片预取
+				//if(flag==0) {
+					img49[TileNum] = new Image();
+					//img49[TileNum].src=url1+'i/'+pngTile[TileNum];
+					//img49[TileNum].src=url3+pngTileSubZoom[TileNum]+'.png';
+					img49[TileNum].src=url2+pngTileSubZoom[TileNum];	
+
+					//ctx.drawImage(img49[TileNum],canvasX+eventX,canvasY+eventY);
+				//};
+			}
+
 			function Tilefunction1(TileNum,zz,xx,yy,canvasX,canvasY)
 			{
 				//if(flag==1) {
 					map.draw_json(ctx,TileNum,zz,xx,yy,canvasX+eventX,canvasY+eventY);
 				//};
+			}
+			if(zoom<=11){
+				var countTile=0
+				for (var i = 0; i < 7; i++) {
+					for(var j = 0; j < 7; j++){
+						Tilefunction0(countTile);
+						TilefunctionSub(countTile);
+						TilefunctionAdd(countTile++);
+					}				
+				};					
 			}
 
 			if(flag ==0){
@@ -1776,7 +1864,8 @@ Map主函数的原型方法-地图混合渲染函数
 						//Tilefunction0(countTile,move_x[i],move_y[j]);
 						img49[countTile] = new Image();
 						//img49[countTile].src=url1+'i/'+pngTile[countTile];
-						img49[countTile].src=url2+pngTile[countTile]+'.png';	
+						//img49[countTile].src=url3+pngTile[countTile]+'.png';
+						img49[countTile].src=url2+pngTile[countTile];
 						ctx.drawImage(img49[countTile++],move_x[i]+eventX,move_y[j]+eventY);
 						//Tilefunction0(24,zoom,x,y,move_x[3],move_y[3]);
 						//Tilefunction0(15,zoom,x,y,move_x[3],move_y[2]);
@@ -1815,7 +1904,7 @@ Map主函数的原型方法-切片z/x/y转bbox（1,2,3,4）边框经纬度
 */
 		Map.prototype.tile2bbox = function(zoom,x,y) {
 
-			function tile2lon(zoom, x) {
+		function tile2lon(zoom, x) {
 			return (x / Math.pow(2, zoom) * 360 - 180);
 		}
 
@@ -1862,10 +1951,14 @@ Map主函数的原型方法-切片z/x/y转bbox（1,2,3,4）边框经纬度
 		// URL - 对应服务器
 		var url1 ="http://166.111.68.197:11193/geoserver/";
 		//var url1="http://10.108.21.66/geoserver/"
-		//var url1="http://192.168.2.119/geoserver/"
-		var url2 ="http://otile2.mqcdn.com/tiles/1.0.0/osm/";
-		//var url2 ="http://tile.opencyclemap.org/cycle/";
-		var url3 ="http://192.168.1.9:23021/" 
+
+		var url2 ="http://166.111.68.197:11193/geoserver/i/";
+		//http://166.111.68.197:11193/geoserver/i/12/3377/1555
+
+		var url3 ="http://otile2.mqcdn.com/tiles/1.0.0/osm/";
+		//http://otile2.mqcdn.com/tiles/1.0.0/osm/12/3377/1555.png
+
+		//var url4 ="http://tile.opencyclemap.org/cycle/";
 
 
 		var store = new Array(); //切片块缓存

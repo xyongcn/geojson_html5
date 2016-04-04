@@ -1015,7 +1015,8 @@ if(type == 'highway'){
   if(zoom >= 14) {
       style[6] = 9;
       style[7] = 'black';
-      style[8] = rgba(255,255,255,0.6);
+      //style[8] = rgba(255,255,255,0.6);
+      style[8] = '#FFFAFA';
       if(zoom >= 17) {
         style[6] = 11;
       }
