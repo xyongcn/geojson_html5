@@ -1,13 +1,14 @@
-# geojson_html5 - map client for geojson and tiles in html5
+# VIMAP-Client for geojson and tiles in html5
+Vector And Image Map
 
-## 浏览器及配置
-浏览器支持：Google chrome
-浏览器配置：cmd run: "C:/Program Files (x86)/Google/Chrome/Application/chrome.exe" --allow-file-access-from-files
+## 客户端
+### 浏览器支持：Google chrome
+### 浏览器配置：cmd run: "C:/Program Files (x86)/Google/Chrome/Application/chrome.exe" --allow-file-access-from-files
 
 ## 数据接口
-矢量地图瓦片：http://166.111.68.197:11193/geoserver/v/15/26978/12417
-栅格地图瓦片：http://166.111.68.197:11193/geoserver/i/15/26978/12417
-矢量路况瓦片（分时）：http://166.111.68.197:11193/geoserver/t/15/26978/12417/10
+### 矢量地图瓦片：http://166.111.68.197:11193/geoserver/v/15/26978/12417
+### 栅格地图瓦片：http://166.111.68.197:11193/geoserver/i/15/26978/12417
+### 矢量路况瓦片（分时）：http://166.111.68.197:11193/geoserver/t/15/26978/12417/10
 
 ## geojson_html5文件架构说明
 geojson_html5结构图及相应功能介绍
