@@ -1,6 +1,6 @@
 /*
-*   Usage: var gcjloc = transformFromWGSToGCJ(lng,lat);
-*   Source: https://github.com/hiwanz/wgs2mars.js.git
+*  WGS-84 to GCJ-02转换函数使用方法
+*  var gcjloc = transformFromWGSToGCJ(lng,lat);
 */
 (function(global){
     // const PI

@@ -1,7 +1,5 @@
 /*
- * Storage.js - v1.2 - 2015-10-30
- * Created by Andreas Nylin
- * andreas.nylin@gmail.com / @andreasnylin / andreasnylin.com
+ * 缓存模块：Storage.js 使用方法
  */
 (function(win){
 	'use strict';
