@@ -2,7 +2,7 @@
 Client map for geojson and tiles in html5
 
 ## 获取代码
-* github项目主页: < https://github.com/xyongcn/geojson_html5>
+* github项目主页：https://github.com/xyongcn/geojson_html5
 
 ## 客户端
 * 浏览器支持：Google chrome
